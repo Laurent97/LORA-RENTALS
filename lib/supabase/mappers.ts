@@ -41,6 +41,8 @@ export const userFromRow = (r: any): User => ({
   referredBy: r.referred_by ?? undefined,
   preferredCurrency: r.preferred_currency ?? undefined,
   preferredLocale: r.preferred_locale ?? undefined,
+  suspendedAt: r.suspended_at ?? undefined,
+  deletedAt: r.deleted_at ?? undefined,
 });
 
 export const userToRow = (u: User) => ({

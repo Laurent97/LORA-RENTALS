@@ -36,6 +36,8 @@ export interface User {
   referredBy?: string;
   preferredCurrency?: "RWF" | "USD";
   preferredLocale?: Locale;
+  suspendedAt?: string;
+  deletedAt?: string;
 }
 
 export interface Vehicle {
