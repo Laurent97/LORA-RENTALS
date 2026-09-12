@@ -46,7 +46,8 @@ export default function OwnerDashboard() {
           <CardContent className="flex items-center gap-3 p-4">
             <Clock className="h-5 w-5 text-amber-500" />
             <p className="text-sm">
-              <strong>KYC pending.</strong> Upload your documents in Profile — an admin will verify you before cars go live.
+              <strong>KYC pending.</strong> Upload your documents in{" "}
+              <Link href="/owner/profile" className="font-semibold underline underline-offset-4">Profile &amp; KYC</Link> — an admin will verify you before cars go live.
             </p>
           </CardContent>
         </Card>
