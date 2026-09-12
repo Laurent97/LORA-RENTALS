@@ -54,9 +54,9 @@ function LoginForm() {
     setLoading(false);
     if (res.status === "unconfirmed") {
       toast.info("Please verify your email first — we've sent you a new code");
-      // A resent signup code is a magiclink token — verify it as "email".
-      const r = await useApp.getState().resendOtp(data.email, "signup");
-      toVerify(data.email, r.verifyType ?? "signup");
+      // The resent code is a magiclink login token — route through the email flow.
+      void useApp.getState().resendOtp(data.email, "signup");
+      toVerify(data.email, "email");
       return;
     }
     if (res.status === "error") {

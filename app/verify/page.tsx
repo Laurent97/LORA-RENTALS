@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LogoMark } from "@/components/layout/logo";
 import { OtpInput } from "@/components/otp-input";
-import { useApp, type OtpType } from "@/lib/store";
+import { useApp, type OtpType, type VerifyType } from "@/lib/store";
 import { getSupabase } from "@/lib/supabase/client";
 
 const DEST: Record<string, string> = { customer: "/dashboard", owner: "/owner", admin: "/admin" };
@@ -38,8 +38,9 @@ function VerifyForm() {
   const [cooldown, setCooldown] = useState(RESEND_SECONDS);
   const [verified, setVerified] = useState(false);
   const [newPassword, setNewPassword] = useState("");
-  // A resent signup code is a magiclink token — verify it as "email".
-  const [verifyType, setVerifyType] = useState<OtpType>(type);
+  // Login codes (and resent signup codes) are magiclink tokens — verify as
+  // "magiclink"; "email" is only the UI copy type.
+  const [verifyType, setVerifyType] = useState<VerifyType>(type === "email" ? "magiclink" : type);
 
   useEffect(() => {
     if (cooldown <= 0) return;

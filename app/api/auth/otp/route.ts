@@ -56,9 +56,10 @@ export async function POST(req: Request) {
 
   // For a signup resend we no longer have the user's password, so generate a
   // magiclink token instead — verifying it confirms the email and signs in.
-  // The client switches its verify type to "email" based on verifyType below.
+  // Magiclink tokens must be verified with type "magiclink" (not "email") —
+  // some GoTrue versions reject "email" for admin-generated tokens.
   const linkType = input.kind === "resend" && kind === "signup" ? "magiclink" : kind === "login" ? "magiclink" : kind;
-  const verifyType = linkType === "magiclink" ? "email" : kind;
+  const verifyType = linkType;
 
   const { data, error } = await sb.auth.admin.generateLink(
     linkType === "signup"
@@ -75,6 +76,10 @@ export async function POST(req: Request) {
 
   if (error || !data.properties?.email_otp) {
     const msg = error?.message ?? "Could not generate code";
+    // Project has autoconfirm on — the user is already confirmed, no code needed.
+    if (kind === "signup" && data.user?.email_confirmed_at) {
+      return NextResponse.json({ ok: true, confirmed: true });
+    }
     // Anti-enumeration: never reveal whether a login/recovery account exists.
     if (kind !== "signup") return NextResponse.json({ ok: true, verifyType });
     if (/already (been )?registered|already exists/i.test(msg)) {

@@ -66,6 +66,8 @@ import {
 // NOTE: the mock fallback accepts any password for known emails — remove it in production.
 
 export type OtpType = "signup" | "email" | "recovery";
+/** verifyOtp accepts magiclink too — admin-generated login/resend codes are magiclink tokens */
+export type VerifyType = OtpType | "magiclink";
 export interface PendingProfile { name: string; phone: string; role: UserRole; refCode?: string }
 export type RegisterResult =
   | { status: "done"; user: User }
@@ -102,8 +104,8 @@ interface AppState {
   /** Profile captured at signup, finalised after the email code is verified */
   pendingProfile: PendingProfile | null;
   /** Verify a 6-digit code (signup confirmation, passwordless login or recovery) */
-  verifyOtp: (email: string, token: string, type: OtpType) => Promise<{ ok: true; user: User } | { ok: false; error: string }>;
-  resendOtp: (email: string, type: OtpType) => Promise<{ ok: boolean; error?: string; verifyType?: OtpType }>;
+  verifyOtp: (email: string, token: string, type: VerifyType) => Promise<{ ok: true; user: User } | { ok: false; error: string }>;
+  resendOtp: (email: string, type: OtpType) => Promise<{ ok: boolean; error?: string; verifyType?: VerifyType }>;
   /** Passwordless: email a login code to an existing account */
   sendLoginCode: (email: string) => Promise<{ ok: boolean; error?: string }>;
   sendPasswordReset: (email: string) => Promise<{ ok: boolean; error?: string }>;
@@ -225,6 +227,14 @@ export const useApp = create<AppState>()(
           const json = await res.json().catch(() => ({}));
           if (!res.ok || !json.ok) return { status: "error", error: json.error ?? "Sign-up failed. Please try again." };
           set({ pendingProfile: pending });
+          // Project has autoconfirm on — no code needed, sign in directly.
+          if (json.confirmed) {
+            const { data: signIn, error: signInErr } = await sb.auth.signInWithPassword({ email, password });
+            if (signInErr || !signIn.user) return { status: "verify", email };
+            const u = await get()._loadOrCreateProfile(signIn.user.id, email);
+            if (!u) return { status: "error", error: "Account profile missing. Contact support." };
+            return { status: "done", user: u };
+          }
           return { status: "verify", email };
         }
         // mock fallback
@@ -256,7 +266,7 @@ export const useApp = create<AppState>()(
         });
         const json = await res.json().catch(() => ({}));
         return res.ok && json.ok
-          ? { ok: true, verifyType: json.verifyType as OtpType | undefined }
+          ? { ok: true, verifyType: json.verifyType as VerifyType | undefined }
           : { ok: false, error: json.error ?? "Could not resend" };
       },
 
@@ -341,7 +351,7 @@ export const useApp = create<AppState>()(
         const uid = get().user?.id;
         if (sb && uid) {
           sb.from("currency_preferences")
-            .upsert({ user_id: uid, currency: c, updated_at: new Date().toISOString() })
+            .upsert({ user_id: uid, preferred_currency: c, updated_at: new Date().toISOString() })
             .then(({ error }) => error && console.warn("currency pref sync failed:", error.message));
         }
       },
@@ -389,6 +399,7 @@ export const useApp = create<AppState>()(
             console.warn("[hydrate] reviews join failed, retrying plain:", reviewsRes.error.message);
             reviewsRes = await sb.from("reviews").select("*, customer:users!customer_id(name)");
           }
+          const uid = get().user?.id;
           const [u, v, b, n, loc, av, loy, pts, ref, insp, sos, posts, corp, cm, inv, ap, fx] =
             await Promise.all([
               sb.from("users").select("*"),
@@ -407,7 +418,9 @@ export const useApp = create<AppState>()(
               sb.from("corporate_members").select("*"),
               sb.from("invoices").select("*"),
               sb.from("airport_bookings").select("*"),
-              sb.from("currency_preferences").select("*").eq("user_id", get().user?.id ?? ""),
+              uid
+                ? sb.from("currency_preferences").select("*").eq("user_id", uid).maybeSingle()
+                : Promise.resolve({ data: null, error: null }),
             ]);
           const dbBookings = (b.data ?? []).map(bookingFromRow);
           // On re-hydration keep locally-created bookings not yet synced to
@@ -442,7 +455,7 @@ export const useApp = create<AppState>()(
             corporateMembers: (cm.data ?? []).map(corpMemberFromRow),
             invoices: (inv.data ?? []).map(invoiceFromRow),
             airportBookings: (ap.data ?? []).map(airportFromRow),
-            currency: (fx.data?.[0]?.currency as "RWF" | "USD" | undefined) ?? get().currency,
+            currency: (fx.data?.preferred_currency as "RWF" | "USD" | undefined) ?? get().currency,
             hydrated: true,
           });
         } catch {
