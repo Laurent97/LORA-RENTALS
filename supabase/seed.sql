@@ -98,6 +98,33 @@ create table if not exists public.reviews (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+-- reviews: upgrade path for databases created before the review system —
+-- must run BEFORE the indexes/migration below that reference these columns
+alter table public.reviews add column if not exists owner_id uuid references public.users(id);
+alter table public.reviews add column if not exists title text;
+alter table public.reviews add column if not exists photos jsonb not null default '[]'::jsonb;
+alter table public.reviews add column if not exists tags text[] not null default '{}';
+alter table public.reviews add column if not exists status text not null default 'published';
+alter table public.reviews add column if not exists flagged_by uuid[] not null default '{}';
+alter table public.reviews add column if not exists flag_reason text;
+alter table public.reviews add column if not exists admin_note text;
+alter table public.reviews add column if not exists removed_by uuid references public.users(id);
+alter table public.reviews add column if not exists removed_at timestamptz;
+alter table public.reviews add column if not exists removal_reason text;
+alter table public.reviews add column if not exists edited_at timestamptz;
+alter table public.reviews add column if not exists edit_count int not null default 0;
+alter table public.reviews add column if not exists is_verified_booking boolean not null default true;
+alter table public.reviews add column if not exists helpful_count int not null default 0;
+alter table public.reviews add column if not exists updated_at timestamptz not null default now();
+-- existing tables lack the inline status check — add it idempotently
+alter table public.reviews drop constraint if exists reviews_status_check;
+alter table public.reviews add constraint reviews_status_check
+  check (status in ('published','hidden','flagged','removed'));
+-- backfill owner_id from the booking
+update public.reviews r set owner_id = b.owner_id
+from public.bookings b where b.id = r.booking_id and r.owner_id is null;
+
 -- one review per booking
 create unique index if not exists reviews_booking_uidx on public.reviews(booking_id);
 create index if not exists reviews_vehicle_idx on public.reviews(vehicle_id);
@@ -373,27 +400,6 @@ alter table public.users add column if not exists preferred_locale text default 
 
 alter table public.vehicles add column if not exists payment_methods text[] not null default '{cash,momo,card}';
 alter table public.vehicles add column if not exists airport_approved boolean not null default false;
-
--- reviews: upgrade path for databases created before the review system
-alter table public.reviews add column if not exists owner_id uuid references public.users(id);
-alter table public.reviews add column if not exists title text;
-alter table public.reviews add column if not exists photos jsonb not null default '[]'::jsonb;
-alter table public.reviews add column if not exists tags text[] not null default '{}';
-alter table public.reviews add column if not exists status text not null default 'published';
-alter table public.reviews add column if not exists flagged_by uuid[] not null default '{}';
-alter table public.reviews add column if not exists flag_reason text;
-alter table public.reviews add column if not exists admin_note text;
-alter table public.reviews add column if not exists removed_by uuid references public.users(id);
-alter table public.reviews add column if not exists removed_at timestamptz;
-alter table public.reviews add column if not exists removal_reason text;
-alter table public.reviews add column if not exists edited_at timestamptz;
-alter table public.reviews add column if not exists edit_count int not null default 0;
-alter table public.reviews add column if not exists is_verified_booking boolean not null default true;
-alter table public.reviews add column if not exists helpful_count int not null default 0;
-alter table public.reviews add column if not exists updated_at timestamptz not null default now();
--- backfill owner_id from the booking
-update public.reviews r set owner_id = b.owner_id
-from public.bookings b where b.id = r.booking_id and r.owner_id is null;
 
 -- notifications: allow the 'review' type
 alter table public.notifications drop constraint if exists notifications_type_check;
