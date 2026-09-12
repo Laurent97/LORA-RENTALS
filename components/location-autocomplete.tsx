@@ -112,24 +112,26 @@ export function LocationAutocomplete({ value, onChange, placeholder = "Search a 
           ref={listRef}
           id={id ? `${id}-list` : undefined}
           role="listbox"
-          className="absolute z-50 mt-1.5 max-h-64 w-full overflow-auto rounded-xl border border-border bg-card p-1 shadow-xl"
+          className="absolute z-50 mt-1.5 max-h-64 w-full overflow-auto rounded-xl border border-border bg-card p-1 text-card-foreground shadow-xl"
         >
-          {results.map((l, i) => (
+          {results.map((l, i) => {
+            const active = i === hi;
+            return (
             <li
               key={l.id}
               role="option"
-              aria-selected={i === hi}
+              aria-selected={active}
               onMouseEnter={() => setHi(i)}
               onClick={() => pick(l)}
               className={cn(
-                "flex cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm",
-                i === hi ? "bg-secondary" : ""
+                "flex cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-foreground",
+                active && "bg-secondary text-secondary-foreground"
               )}
             >
-              <MapPin className="h-4 w-4 shrink-0 text-muted-foreground" />
-              <span className="flex-1">
-                <span className="font-medium">{l.name}</span>
-                <span className="ml-2 text-xs text-muted-foreground">{l.province}</span>
+              <MapPin className={cn("h-4 w-4 shrink-0", active ? "text-secondary-foreground/70" : "text-muted-foreground")} />
+                <span className="flex-1 text-foreground">
+                <span className={cn("font-medium", active ? "text-secondary-foreground" : "text-foreground")}>{l.name}</span>
+                <span className={cn("ml-2 text-xs", active ? "text-secondary-foreground/70" : "text-muted-foreground")}>{l.province}</span>
               </span>
               {l.isPopular && (
                 <span className="flex items-center gap-1 rounded-full bg-gold/15 px-2 py-0.5 text-[10px] font-bold text-gold-600 dark:text-gold">
@@ -137,7 +139,8 @@ export function LocationAutocomplete({ value, onChange, placeholder = "Search a 
                 </span>
               )}
             </li>
-          ))}
+            );
+          })}
         </ul>
       )}
     </div>

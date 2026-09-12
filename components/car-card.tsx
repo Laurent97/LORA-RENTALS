@@ -65,11 +65,11 @@ export function CarCard({ vehicle }: { vehicle: Vehicle }) {
           <Rating value={vehicle.rating} count={vehicle.reviewCount} />
         </div>
 
-        <div className="mt-3 flex items-center gap-3 text-xs text-muted-foreground">
-          <span className="flex items-center gap-1"><Users className="h-3.5 w-3.5" />{vehicle.seats}</span>
-          <span className="flex items-center gap-1"><Settings2 className="h-3.5 w-3.5" />{vehicle.transmission}</span>
-          <span className="flex items-center gap-1"><Fuel className="h-3.5 w-3.5" />{vehicle.fuel}</span>
-          <span className="ml-auto rounded-md bg-secondary px-1.5 py-0.5 font-semibold uppercase">{vehicle.type}</span>
+        <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+          <span className="flex min-w-0 items-center gap-1"><Users className="h-3.5 w-3.5" />{vehicle.seats}</span>
+          <span className="flex min-w-0 items-center gap-1"><Settings2 className="h-3.5 w-3.5" />{vehicle.transmission}</span>
+          <span className="flex min-w-0 items-center gap-1"><Fuel className="h-3.5 w-3.5" />{vehicle.fuel}</span>
+          <span className="ml-auto min-w-0 rounded-md bg-secondary px-1.5 py-0.5 font-semibold uppercase">{vehicle.type}</span>
         </div>
 
         <div className="mt-3 flex items-baseline justify-between border-t border-border pt-3">

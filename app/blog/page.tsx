@@ -31,7 +31,7 @@ export default function BlogPage() {
     <main className="container py-12">
       <div className="mx-auto max-w-2xl text-center">
         <Badge variant="gold" className="mb-4">LORA Journal</Badge>
-        <h1 className="font-display text-4xl font-extrabold tracking-tight">Travel guides & news</h1>
+        <h1 className="font-display text-3xl font-extrabold tracking-tight md:text-4xl">Travel guides & news</h1>
         <p className="mt-3 text-muted-foreground">
           Road trips, driving tips and destination guides for exploring Rwanda by car.
         </p>

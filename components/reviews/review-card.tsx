@@ -62,8 +62,8 @@ export function ReviewCard({
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-navy-800 text-xs font-bold text-gold dark:bg-gold dark:text-navy-900">
             {initials(review.customerName)}
           </span>
-          <div>
-            <p className="flex items-center gap-1.5 text-sm font-semibold">
+          <div className="min-w-0">
+            <p className="flex flex-wrap items-center gap-1.5 text-sm font-semibold">
               {review.customerName}
               {review.isVerifiedBooking && (
                 <span className="inline-flex items-center gap-0.5 text-[11px] font-medium text-sky-600 dark:text-sky-400">

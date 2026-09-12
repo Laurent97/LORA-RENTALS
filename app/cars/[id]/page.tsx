@@ -123,9 +123,9 @@ export default function CarDetailPage() {
         ))}
       </div>
 
-      <div className="mt-8 grid gap-10 lg:grid-cols-[1fr_380px]">
+      <div className="mt-8 grid gap-10 lg:grid-cols-[1fr_minmax(300px,380px)]">
         {/* Left column */}
-        <div>
+        <div className="min-w-0">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <div className="flex items-center gap-2">

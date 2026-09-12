@@ -29,7 +29,7 @@ export default function ContactPage() {
       <div className="mx-auto max-w-4xl">
         <div className="text-center">
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-gold-600 dark:text-gold">Contact</p>
-          <h1 className="mt-2 font-display text-4xl font-extrabold tracking-tight">Talk to us</h1>
+          <h1 className="mt-2 font-display text-3xl font-extrabold tracking-tight md:text-4xl">Talk to us</h1>
           <p className="mt-3 text-muted-foreground">
             Questions about a booking, listing your car, or partnerships — we're here.
           </p>
@@ -45,10 +45,10 @@ export default function ContactPage() {
             ].map((c) => (
               <Card key={c.label}>
                 <CardContent className="flex items-center gap-4 p-5">
-                  <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-navy-800 dark:bg-gold">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-navy-800 dark:bg-gold">
                     <c.icon className="h-5 w-5 text-gold dark:text-navy-900" />
                   </span>
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{c.label}</p>
                     {c.href ? <a href={c.href} className="text-sm font-semibold hover:text-gold-600 dark:hover:text-gold">{c.value}</a> : <p className="text-sm font-semibold">{c.value}</p>}
                   </div>

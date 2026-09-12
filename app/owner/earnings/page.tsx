@@ -49,7 +49,7 @@ export default function EarningsPage() {
           {mine.length === 0 ? (
             <p className="py-8 text-center text-sm text-muted-foreground">No earnings yet.</p>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto max-w-full">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">

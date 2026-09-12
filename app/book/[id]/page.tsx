@@ -166,8 +166,8 @@ export default function BookingPage() {
         ))}
       </ol>
 
-      <div className="grid gap-8 lg:grid-cols-[1fr_320px]">
-        <div>
+      <div className="grid gap-8 lg:grid-cols-[1fr_minmax(300px,320px)]">
+        <div className="min-w-0">
           {/* Step 0 — dates & locations */}
           {step === 0 && (
             <Card>
@@ -263,7 +263,7 @@ export default function BookingPage() {
                 <div>
                   <h2 className="font-display text-xl font-bold">Payment — on arrival only</h2>
                   <p className="mt-1 text-xs text-muted-foreground">No online charge. You pay when you get the keys.</p>
-                  <div className="mt-3 grid grid-cols-3 gap-2">
+                  <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
                     {(
                       [
                         { v: "cash", label: "Cash", icon: Banknote },
@@ -285,7 +285,7 @@ export default function BookingPage() {
                       </button>
                     ))}
                   </div>
-                  <div className="mt-3 grid grid-cols-2 gap-2">
+                  <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
                     {(
                       [
                         { v: "pickup", label: "Pay at pickup" },

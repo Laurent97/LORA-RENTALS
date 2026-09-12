@@ -15,7 +15,7 @@ export default function AboutPage() {
     <main className="container py-16">
       <div className="mx-auto max-w-3xl">
         <p className="text-xs font-bold uppercase tracking-[0.2em] text-gold-600 dark:text-gold">About us</p>
-        <h1 className="mt-2 font-display text-4xl font-extrabold tracking-tight">
+        <h1 className="mt-2 font-display text-3xl font-extrabold tracking-tight md:text-4xl">
           LORA RENTALS LTD
         </h1>
         <p className="mt-6 text-lg leading-relaxed text-muted-foreground">

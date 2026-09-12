@@ -146,7 +146,7 @@ function LoginForm() {
             <p className="mb-2 text-center text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               Demo accounts — password: demo1234
             </p>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
               {DEMO.map((d) => (
                 <button
                   key={d.email}

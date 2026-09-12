@@ -139,24 +139,24 @@ export default function AirportPickupPage() {
                   {fleet.map((v) => (
                     <label
                       key={v.id}
-                      className={`flex cursor-pointer items-center justify-between rounded-xl border p-3 transition-colors ${
+                      className={`flex cursor-pointer flex-wrap items-center justify-between gap-3 rounded-xl border p-3 transition-colors ${
                         vehicle?.id === v.id ? "border-gold bg-gold/5" : "border-border hover:border-gold/50"
                       }`}
                     >
-                      <span className="flex items-center gap-3">
+                      <span className="flex min-w-0 items-center gap-3">
                         <input
                           type="radio"
                           name="vehicle"
                           checked={vehicle?.id === v.id}
                           onChange={() => setVehicleId(v.id)}
-                          className="accent-gold"
+                          className="shrink-0 accent-gold"
                         />
-                        <span>
+                        <span className="min-w-0">
                           <span className="block text-sm font-semibold">{v.make} {v.model}</span>
                           <span className="text-xs text-muted-foreground">{v.plate} · {v.seats} seats</span>
                         </span>
                       </span>
-                      <span className="font-display font-bold text-navy-800 dark:text-gold">
+                      <span className="shrink-0 font-display font-bold text-navy-800 dark:text-gold">
                         {formatMoney(v.pricePerDay, currency)}<span className="text-xs font-normal text-muted-foreground">/day</span>
                       </span>
                     </label>

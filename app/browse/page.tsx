@@ -84,7 +84,7 @@ function BrowseContent() {
           {RWANDA_LOCATIONS.map((l) => <option key={l} value={l}>{l}</option>)}
         </Select>
       </div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <Label htmlFor="f-trans" className="mb-2 block">Transmission</Label>
           <Select id="f-trans" value={transmission} onChange={(e) => setTransmission(e.target.value as Transmission | "")}>
@@ -100,7 +100,7 @@ function BrowseContent() {
           </Select>
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <Label htmlFor="f-seats" className="mb-2 block">Min seats</Label>
           <Select id="f-seats" value={seats} onChange={(e) => setSeats(e.target.value)}>
@@ -148,7 +148,7 @@ function BrowseContent() {
             <SlidersHorizontal className="h-4 w-4" /> Filters
             {activeFilters > 0 && <span className="ml-1 rounded-full bg-gold px-1.5 text-[10px] font-bold text-navy-900">{activeFilters}</span>}
           </Button>
-          <Select value={sort} onChange={(e) => setSort(e.target.value)} className="w-44" aria-label="Sort by">
+          <Select value={sort} onChange={(e) => setSort(e.target.value)} className="w-full sm:w-44" aria-label="Sort by">
             {SORTS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
           </Select>
           <div className="hidden rounded-xl border border-border p-0.5 sm:flex">

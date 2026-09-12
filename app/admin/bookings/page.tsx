@@ -46,11 +46,11 @@ export default function AdminBookingsPage() {
       </div>
 
       <div className="flex flex-wrap gap-3">
-        <div className="relative flex-1 min-w-[220px]">
+        <div className="relative flex-1 min-w-0">
           <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input className="pl-10" placeholder="Search ref, vehicle, customer…" value={q} onChange={(e) => setQ(e.target.value)} />
         </div>
-        <Select value={status} onChange={(e) => setStatus(e.target.value as BookingStatus | "")} className="w-48">
+        <Select value={status} onChange={(e) => setStatus(e.target.value as BookingStatus | "")} className="w-full sm:w-48">
           <option value="">All statuses</option>
           {Object.entries(BOOKING_STATUS_LABELS).map(([v, l]) => (
             <option key={v} value={v}>{l}</option>
@@ -103,7 +103,7 @@ export default function AdminBookingsPage() {
                               updateBookingStatus(b.id, e.target.value as BookingStatus);
                               toast.success(`Booking ${bookingRef(b.id)} → ${e.target.value.replace("_", " ")}`);
                             }}
-                            className="h-8 w-36 text-xs"
+                            className="h-8 w-full sm:w-36 text-xs"
                             aria-label="Override status"
                           >
                             {Object.entries(BOOKING_STATUS_LABELS).map(([v, l]) => (

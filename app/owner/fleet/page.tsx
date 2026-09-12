@@ -118,11 +118,11 @@ export default function FleetPage() {
               </div>
               <CardContent className="p-4">
                 <div className="flex items-start justify-between">
-                  <div>
+                  <div className="min-w-0">
                     <p className="font-display font-bold">{v.make} {v.model}</p>
                     <p className="text-xs text-muted-foreground">{v.plate} · {v.location}</p>
                   </div>
-                  <p className="font-display font-bold text-navy-800 dark:text-gold">
+                  <p className="shrink-0 font-display font-bold text-navy-800 dark:text-gold">
                     {formatMoney(v.pricePerDay, currency)}<span className="text-xs font-normal text-muted-foreground">/day</span>
                   </p>
                 </div>

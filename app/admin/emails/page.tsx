@@ -224,7 +224,7 @@ export default function AdminEmailsPage() {
         <div className="space-y-3">
           <Card>
             <CardContent className="flex flex-wrap items-center gap-2 p-3">
-              <div className="relative flex-1 min-w-[200px]">
+              <div className="relative flex-1 min-w-0">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => e.key === "Enter" && loadLogs()} placeholder="Search recipient or subject…" className="pl-8" />
               </div>
@@ -247,6 +247,7 @@ export default function AdminEmailsPage() {
           ) : (
             <Card>
               <CardContent className="p-0">
+                <div className="overflow-x-auto max-w-full">
                 <table className="w-full text-sm">
                   <thead className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
                     <tr>
@@ -279,6 +280,7 @@ export default function AdminEmailsPage() {
                     ))}
                   </tbody>
                 </table>
+                </div>
               </CardContent>
             </Card>
           )}

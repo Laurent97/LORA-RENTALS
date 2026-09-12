@@ -36,7 +36,7 @@ export default function AdminVehiclesPage() {
           <h1 className="font-display text-2xl font-extrabold tracking-tight">Vehicle Management</h1>
           <p className="text-sm text-muted-foreground">{list.length} listings · approve, feature, flag</p>
         </div>
-        <Select value={filter} onChange={(e) => setFilter(e.target.value as VehicleStatus | "")} className="w-52">
+        <Select value={filter} onChange={(e) => setFilter(e.target.value as VehicleStatus | "")} className="w-full sm:w-52">
           <option value="">All statuses</option>
           <option value="pending_approval">Pending approval</option>
           <option value="available">Available</option>
@@ -56,14 +56,14 @@ export default function AdminVehiclesPage() {
                 <div className="relative h-16 w-24 shrink-0 overflow-hidden rounded-lg bg-muted">
                   <Image src={v.images[0]} alt="" fill className="object-cover" />
                 </div>
-                <div className="flex-1">
+                <div className="min-w-0 flex-1">
                   <p className="font-display font-bold">{v.make} {v.model} · {v.year}</p>
                   <p className="text-xs text-muted-foreground">
                     {v.plate} · {v.location} · by {users.find((u) => u.id === v.ownerId)?.name}
                   </p>
                 </div>
-                <p className="font-display font-bold">{formatMoney(v.pricePerDay, currency)}/day</p>
-                <div className="flex gap-2">
+                <p className="shrink-0 font-display font-bold">{formatMoney(v.pricePerDay, currency)}/day</p>
+                <div className="shrink-0 flex gap-2">
                   <Button variant="gold" size="sm" onClick={() => toast.success(`${v.make} ${v.model} approved & live`)}>
                     <Check className="h-3.5 w-3.5" /> Approve
                   </Button>
