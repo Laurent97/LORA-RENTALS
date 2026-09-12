@@ -91,6 +91,8 @@ const profileFor = (id: string, email: string, p: PendingProfile): User => ({
 interface AppState {
   // auth
   user: User | null;
+  authReady: boolean;
+  syncAuthSession: () => Promise<void>;
   login: (email: string, password?: string) => Promise<LoginResult>;
   register: (
     name: string,
@@ -185,6 +187,25 @@ export const useApp = create<AppState>()(
   persist(
     (set, get) => ({
       user: null,
+      authReady: false,
+
+      syncAuthSession: async () => {
+        const sb = getSupabase();
+        if (!sb) {
+          set({ authReady: true });
+          return;
+        }
+        try {
+          const { data } = await sb.auth.getSession();
+          if (data.session?.user) {
+            await get()._loadOrCreateProfile(data.session.user.id, data.session.user.email ?? "");
+          } else {
+            set({ user: null });
+          }
+        } finally {
+          set({ authReady: true });
+        }
+      },
 
       login: async (email, password) => {
         const sb = getSupabase();
@@ -197,6 +218,7 @@ export const useApp = create<AppState>()(
           }
           const u = await get()._loadOrCreateProfile(data.user.id, email);
           if (!u) return { status: "error", error: "Account profile missing. Contact support." };
+          set({ authReady: true });
           return { status: "ok", user: u };
         }
         // Mock fallback — ONLY when Supabase isn't configured (offline demo)

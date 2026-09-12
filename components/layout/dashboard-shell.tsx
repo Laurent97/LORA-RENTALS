@@ -36,18 +36,19 @@ export function DashboardShell({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, logout } = useApp();
+  const { user, authReady, logout } = useApp();
 
   // Mock route guard — replace with Supabase middleware later
   useEffect(() => {
+    if (!authReady) return;
     if (!user) router.replace("/login");
     else if (user.role !== role) {
       const dest = { customer: "/dashboard", owner: "/owner", admin: "/admin" }[user.role];
       router.replace(dest);
     }
-  }, [user, role, router]);
+  }, [authReady, user, role, router]);
 
-  if (!user || user.role !== role) {
+  if (!authReady || !user || user.role !== role) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-gold border-t-transparent" />
