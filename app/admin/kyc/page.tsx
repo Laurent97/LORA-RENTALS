@@ -31,9 +31,15 @@ export default function AdminKycPage() {
   const load = async () => {
     const sb = getSupabase();
     if (!sb) return;
-    const { data, error } = await sb.from("kyc_documents").select("id, user_id, type, url, status, review_note, reviewed_at, created_at").order("created_at", { ascending: false });
-    if (error) toast.error("Could not load KYC documents");
-    else setDocuments((data ?? []) as DocumentRow[]);
+    const full = await sb.from("kyc_documents").select("id, user_id, type, url, status, review_note, reviewed_at, created_at").order("created_at", { ascending: false });
+    if (!full.error) {
+      setDocuments((full.data ?? []) as DocumentRow[]);
+      return;
+    }
+    // Older projects may not have migration 202609120003 applied yet.
+    const base = await sb.from("kyc_documents").select("id, user_id, type, url, status, created_at").order("created_at", { ascending: false });
+    if (base.error) toast.error(`Could not load KYC documents: ${base.error.message}`);
+    else setDocuments((base.data ?? []).map((document) => ({ ...document, review_note: null, reviewed_at: null })) as DocumentRow[]);
   };
   useEffect(() => { void load(); }, []);
 
