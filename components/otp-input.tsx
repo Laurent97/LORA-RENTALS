@@ -58,7 +58,7 @@ export function OtpInput({ value, onChange, onComplete, length = OTP_LENGTH, dis
   };
 
   return (
-    <div className="flex justify-center gap-2 sm:gap-3" onPaste={handlePaste} role="group" aria-label="Verification code">
+    <div className="flex w-full justify-center gap-1.5 sm:gap-2" onPaste={handlePaste} role="group" aria-label="Verification code">
       {digits.map((d, i) => (
         <input
           key={i}
@@ -75,7 +75,7 @@ export function OtpInput({ value, onChange, onComplete, length = OTP_LENGTH, dis
           onKeyDown={(e) => handleKey(i, e)}
           onFocus={(e) => e.target.select()}
           className={cn(
-            "h-14 w-11 rounded-xl border-2 bg-background text-center font-mono text-2xl font-bold tabular-nums transition-colors sm:h-16 sm:w-12",
+            "h-11 w-8 rounded-lg border-2 bg-background text-center font-mono text-xl font-bold tabular-nums transition-colors sm:h-12 sm:w-10 sm:rounded-xl sm:text-2xl",
             "focus:outline-none focus:ring-2 focus:ring-gold/60",
             error ? "border-destructive" : d ? "border-gold" : "border-border",
             disabled && "opacity-60"
