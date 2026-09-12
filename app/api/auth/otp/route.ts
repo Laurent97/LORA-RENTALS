@@ -56,10 +56,10 @@ export async function POST(req: Request) {
 
   // For a signup resend we no longer have the user's password, so generate a
   // magiclink token instead — verifying it confirms the email and signs in.
-  // Magiclink tokens must be verified with type "magiclink" (not "email") —
-  // some GoTrue versions reject "email" for admin-generated tokens.
+  // generateLink returns an email OTP. Supabase's current API verifies email
+  // OTPs with type "email"; the older signup/magiclink types are deprecated.
   const linkType = input.kind === "resend" && kind === "signup" ? "magiclink" : kind === "login" ? "magiclink" : kind;
-  const verifyType = linkType;
+  const verifyType = kind === "recovery" ? "recovery" : "email";
 
   const { data, error } = await sb.auth.admin.generateLink(
     linkType === "signup"

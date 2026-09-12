@@ -38,9 +38,8 @@ function VerifyForm() {
   const [cooldown, setCooldown] = useState(RESEND_SECONDS);
   const [verified, setVerified] = useState(false);
   const [newPassword, setNewPassword] = useState("");
-  // Login codes (and resent signup codes) are magiclink tokens — verify as
-  // "magiclink"; "email" is only the UI copy type.
-  const [verifyType, setVerifyType] = useState<VerifyType>(type === "email" ? "magiclink" : type);
+  // All custom email codes use Supabase's current email OTP verification type.
+  const [verifyType, setVerifyType] = useState<VerifyType>(type === "signup" ? "email" : type);
 
   useEffect(() => {
     if (cooldown <= 0) return;

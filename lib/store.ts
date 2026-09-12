@@ -66,8 +66,7 @@ import {
 // NOTE: the mock fallback accepts any password for known emails — remove it in production.
 
 export type OtpType = "signup" | "email" | "recovery";
-/** verifyOtp accepts magiclink too — admin-generated login/resend codes are magiclink tokens */
-export type VerifyType = OtpType | "magiclink";
+export type VerifyType = OtpType;
 export interface PendingProfile { name: string; phone: string; role: UserRole; refCode?: string }
 export type RegisterResult =
   | { status: "done"; user: User }
