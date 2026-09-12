@@ -161,7 +161,7 @@ export const auth = {
       greeting(t, d.first_name),
       p("You're one step away from booking. Verify your email to activate your LORA account."),
       button("Verify My Email →", d.verify_url),
-      p("The link sends you a fresh 6-digit code.", { muted: true, small: true, center: true }),
+      p("The email contains a fresh 8-digit code.", { muted: true, small: true, center: true }),
       signature(t),
     ].join(""),
   }),

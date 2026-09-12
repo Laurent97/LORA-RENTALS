@@ -16,6 +16,8 @@ export const BRAND = {
   address: "KG 7 Ave, Kigali Heights, Kigali, Rwanda",
 } as const;
 
+export const OTP_LENGTH = 8;
+
 // ─── Currency ────────────────────────────────────────────────────────────────
 export const USD_RATE = 1300; // 1 USD ≈ 1300 RWF (display-only toggle)
 

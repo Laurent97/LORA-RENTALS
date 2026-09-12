@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
+import { OTP_LENGTH } from "@/lib/constants";
 
 interface Props {
   value: string;
@@ -13,9 +14,9 @@ interface Props {
   autoFocus?: boolean;
 }
 
-// Six-box one-time-code input. Supports typing, paste, backspace, arrows and
+// One-time-code input. Supports typing, paste, backspace, arrows and
 // mobile OTP autofill (autocomplete="one-time-code" on the first box).
-export function OtpInput({ value, onChange, onComplete, length = 6, disabled, error, autoFocus = true }: Props) {
+export function OtpInput({ value, onChange, onComplete, length = OTP_LENGTH, disabled, error, autoFocus = true }: Props) {
   const refs = useRef<(HTMLInputElement | null)[]>([]);
   const digits = Array.from({ length }, (_, i) => value[i] ?? "");
 

@@ -58,7 +58,7 @@ ${Object.entries(MAP).map(([f, m]) => `| \`${f}.html\` | ${f.replace("_", " ")} 
 ## Install
 
 1. Supabase Dashboard → **Authentication → Email Templates** → pick the template → paste the HTML and subject.
-2. **Authentication → Providers → Email**: enable *Confirm email*; set OTP length **6**, expiry **600s**.
+2. **Authentication → Providers → Email**: enable *Confirm email*; set OTP length **8**, expiry **600s**.
 3. **Project Settings → Auth → SMTP**: use Postmark — host \`smtp.postmarkapp.com\`, port 587,
    user + password = your Postmark **Server API token**, sender \`noreply@lorarentals.org\`.
    Add the header \`X-PM-Message-Stream: outbound\` if you use a non-default stream.

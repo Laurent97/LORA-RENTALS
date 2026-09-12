@@ -67,7 +67,7 @@ function LoginForm() {
     router.push(next ?? DEST[res.user.role] ?? "/");
   };
 
-  // Passwordless: email a 6-digit sign-in code
+  // Passwordless: email an 8-digit sign-in code
   const onSendCode = async () => {
     if (!(await trigger("email"))) return;
     const email = getValues("email");
@@ -137,7 +137,7 @@ function LoginForm() {
 
           {mode === "code" && (
             <p className="mt-3 flex items-start gap-2 text-xs text-muted-foreground">
-              <KeyRound className="mt-0.5 h-3.5 w-3.5 shrink-0" /> No password needed — we&apos;ll email a 6-digit code that signs you in.
+              <KeyRound className="mt-0.5 h-3.5 w-3.5 shrink-0" /> No password needed — we&apos;ll email an 8-digit code that signs you in.
             </p>
           )}
 

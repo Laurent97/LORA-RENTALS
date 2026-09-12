@@ -70,7 +70,7 @@ function RegisterForm() {
       // Email confirmation required — the referral is applied on /verify once the
       // account exists. Keep the code alongside the pending profile.
       if (refCode) useApp.setState((s) => ({ pendingProfile: s.pendingProfile ? { ...s.pendingProfile, refCode } : s.pendingProfile }));
-      toast.success("Check your inbox for a 6-digit code");
+      toast.success("Check your inbox for an 8-digit code");
       const q = new URLSearchParams({ email: res.email, type: "signup" });
       if (next) q.set("next", next);
       router.push(`/verify?${q}`);
@@ -143,7 +143,7 @@ function RegisterForm() {
           </form>
 
           <p className="mt-3 text-center text-xs text-muted-foreground">
-            We&apos;ll email you a 6-digit code to verify your address.
+            We&apos;ll email you an 8-digit code to verify your address.
           </p>
 
           {role === "owner" && (

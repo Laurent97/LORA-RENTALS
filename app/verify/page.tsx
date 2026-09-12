@@ -13,14 +13,15 @@ import { LogoMark } from "@/components/layout/logo";
 import { OtpInput } from "@/components/otp-input";
 import { useApp, type OtpType, type VerifyType } from "@/lib/store";
 import { getSupabase } from "@/lib/supabase/client";
+import { OTP_LENGTH } from "@/lib/constants";
 
 const DEST: Record<string, string> = { customer: "/dashboard", owner: "/owner", admin: "/admin" };
 const RESEND_SECONDS = 60;
 
 const COPY: Record<OtpType, { title: string; body: string }> = {
-  signup: { title: "Verify your email", body: "We sent a 6-digit code to" },
+  signup: { title: "Verify your email", body: `We sent an ${OTP_LENGTH}-digit code to` },
   email: { title: "Enter your login code", body: "We emailed a one-time sign-in code to" },
-  recovery: { title: "Reset your password", body: "Enter the 6-digit code we sent to" },
+  recovery: { title: "Reset your password", body: `Enter the ${OTP_LENGTH}-digit code we sent to` },
 };
 
 function VerifyForm() {
@@ -52,7 +53,7 @@ function VerifyForm() {
   }, []);
 
   const submit = async (value = code) => {
-    if (value.length !== 6 || busy) return;
+    if (value.length !== OTP_LENGTH || busy) return;
     setBusy(true);
     setErr("");
     const res = await verifyOtp(email, value, verifyType);
@@ -142,7 +143,7 @@ function VerifyForm() {
               {err && <p className="mt-3 text-center text-sm text-destructive" role="alert">{err}</p>}
               <p className="mt-3 text-center text-xs text-muted-foreground">Codes expire after 10 minutes. Check your spam folder if it hasn&apos;t arrived.</p>
 
-              <Button variant="gold" className="mt-6 w-full" onClick={() => submit()} disabled={busy || code.length !== 6}>
+              <Button variant="gold" className="mt-6 w-full" onClick={() => submit()} disabled={busy || code.length !== OTP_LENGTH}>
                 <MailCheck className="h-4 w-4" /> {busy ? "Verifying…" : "Verify"}
               </Button>
 

@@ -52,7 +52,7 @@ Each template's `sample` data doubles as its type: `TemplateDataFor<"booking-con
 
 ## Authentication + email verification flow
 
-Supabase Auth issues and validates the 6-digit codes, but **every email is sent by Postmark** — `POST /api/auth/otp` calls `admin.generateLink` (which creates the user/token without emailing anything) and delivers the code through our branded `auth-otp-*` templates. Supabase's built-in mailer is never invoked, and verification is enforced regardless of the project's "Confirm email" toggle.
+Supabase Auth issues and validates the 8-digit codes, but **every email is sent by Postmark** — `POST /api/auth/otp` calls `admin.generateLink` (which creates the user/token without emailing anything) and delivers the code through our branded `auth-otp-*` templates. Supabase's built-in mailer is never invoked, and verification is enforced regardless of the project's "Confirm email" toggle.
 
 ```
 /register ── POST /api/auth/otp {kind:"signup"} ──► generateLink(signup) creates

@@ -102,7 +102,7 @@ interface AppState {
   ) => Promise<RegisterResult>;
   /** Profile captured at signup, finalised after the email code is verified */
   pendingProfile: PendingProfile | null;
-  /** Verify a 6-digit code (signup confirmation, passwordless login or recovery) */
+  /** Verify an 8-digit code (signup confirmation, passwordless login or recovery) */
   verifyOtp: (email: string, token: string, type: VerifyType) => Promise<{ ok: true; user: User } | { ok: false; error: string }>;
   resendOtp: (email: string, type: OtpType) => Promise<{ ok: boolean; error?: string; verifyType?: VerifyType }>;
   /** Passwordless: email a login code to an existing account */
