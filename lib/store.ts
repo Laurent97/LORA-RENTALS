@@ -56,7 +56,6 @@ import {
   sosFromRow,
   sosToRow,
   userFromRow,
-  userToRow,
   vehicleFromRow,
   vehicleToRow,
 } from "./supabase/mappers";
@@ -326,9 +325,15 @@ export const useApp = create<AppState>()(
           role: meta.role === "owner" ? "owner" : "customer",
         };
         const user = profileFor(id, email, pending);
-        const { error } = await sb.from("users").upsert(userToRow(user));
-        if (error) {
-          console.warn("profile create failed:", error.message);
+        const session = (await sb.auth.getSession()).data.session;
+        if (!session?.access_token) return null;
+        const response = await fetch("/api/auth/profile", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+          body: JSON.stringify({ name: user.name, phone: user.phone, role: user.role }),
+        });
+        if (!response.ok) {
+          console.warn("profile create failed:", await response.text().catch(() => ""));
           return null;
         }
         set({ user, pendingProfile: null });
