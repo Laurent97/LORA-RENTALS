@@ -103,7 +103,7 @@ export function LocationAutocomplete({ value, onChange, placeholder = "Search a 
           }}
           onFocus={() => setOpen(true)}
           onKeyDown={onKey}
-          className="flex h-11 w-full rounded-xl border border-input bg-background pl-10 pr-4 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="flex h-11 w-full rounded-xl border border-input bg-background pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground [color-scheme:light] dark:[color-scheme:dark] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         />
       </div>
 

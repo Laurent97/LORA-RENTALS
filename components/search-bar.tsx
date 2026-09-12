@@ -47,7 +47,7 @@ export function SearchBar({ compact }: { compact?: boolean }) {
 
       <label className="block">
         <span className="mb-1 block text-xs font-semibold text-muted-foreground">Car type</span>
-        <Select value={type} onChange={(e) => setType(e.target.value)} aria-label="Car type">
+        <Select value={type} onChange={(e) => setType(e.target.value)} aria-label="Car type" className="text-foreground [color-scheme:light] dark:[color-scheme:dark]">
           <option value="">All types</option>
           {CAR_TYPES.map((t) => (
             <option key={t.value} value={t.value}>{t.label}</option>
@@ -63,7 +63,7 @@ export function SearchBar({ compact }: { compact?: boolean }) {
           type="date"
           value={start}
           onChange={(e) => setStart(e.target.value)}
-          className="flex h-11 w-full rounded-xl border border-input bg-background px-4 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="flex h-11 w-full rounded-xl border border-input bg-background px-4 text-sm text-foreground [color-scheme:light] dark:[color-scheme:dark] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         />
       </label>
 
@@ -74,7 +74,7 @@ export function SearchBar({ compact }: { compact?: boolean }) {
           value={end}
           min={start}
           onChange={(e) => setEnd(e.target.value)}
-          className="flex h-11 w-full rounded-xl border border-input bg-background px-4 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="flex h-11 w-full rounded-xl border border-input bg-background px-4 text-sm text-foreground [color-scheme:light] dark:[color-scheme:dark] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         />
       </label>
 
