@@ -380,12 +380,20 @@ export const useApp = create<AppState>()(
           return;
         }
         try {
-          const [u, v, b, r, n, loc, av, loy, pts, ref, insp, sos, posts, corp, cm, inv, ap, fx] =
+          // Embedded reply join needs review_replies — fall back to a plain
+          // select if the migration hasn't been run on this project yet.
+          let reviewsRes = await sb
+            .from("reviews")
+            .select("*, customer:users!customer_id(name), reply:review_replies(*, owner:users!owner_id(name))");
+          if (reviewsRes.error) {
+            console.warn("[hydrate] reviews join failed, retrying plain:", reviewsRes.error.message);
+            reviewsRes = await sb.from("reviews").select("*, customer:users!customer_id(name)");
+          }
+          const [u, v, b, n, loc, av, loy, pts, ref, insp, sos, posts, corp, cm, inv, ap, fx] =
             await Promise.all([
               sb.from("users").select("*"),
               sb.from("vehicles").select("*"),
               sb.from("bookings").select("*"),
-              sb.from("reviews").select("*, customer:users!customer_id(name), reply:review_replies(*, owner:users!owner_id(name))"),
               sb.from("notifications").select("*").order("created_at", { ascending: false }).limit(50),
               sb.from("locations").select("*"),
               sb.from("vehicle_availability").select("*"),
@@ -411,7 +419,7 @@ export const useApp = create<AppState>()(
           set({
             users: u.data?.length ? u.data.map(userFromRow) : get().users,
             vehicles: v.data?.length ? v.data.map(vehicleFromRow) : get().vehicles,
-            reviews: (r.data ?? []).map(reviewFromRow),
+            reviews: (reviewsRes.data ?? []).map(reviewFromRow),
             notifications: (n.data ?? []).map((x: Record<string, unknown>) => ({
               id: x.id as string,
               userId: x.user_id as string,
