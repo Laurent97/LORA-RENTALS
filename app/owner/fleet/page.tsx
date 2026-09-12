@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { Car, ImagePlus, Pencil, Plus, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -17,6 +17,7 @@ import Link from "next/link";
 import { CAR_TYPES, FUEL_TYPES, RWANDA_LOCATIONS, TRANSMISSIONS } from "@/lib/constants";
 import { useVehicles } from "@/lib/lookup";
 import { useApp } from "@/lib/store";
+import { getSupabase } from "@/lib/supabase/client";
 import { formatMoney } from "@/lib/utils";
 import type { CarType, FuelType, Transmission, Vehicle, VehicleStatus } from "@/types";
 
@@ -31,6 +32,9 @@ export default function FleetPage() {
   const { user, currency, addVehicle } = useApp();
   const [addOpen, setAddOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [images, setImages] = useState<string[]>([]);
+  const [uploadingPhotos, setUploadingPhotos] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
   if (!user) return null;
 
   const fleet = useVehicles().filter((v) => v.ownerId === user.id);
@@ -56,7 +60,7 @@ export default function FleetPage() {
       seats: Number(fd.get("seats")),
       pricePerDay: Number(fd.get("pricePerDay")),
       location: String(fd.get("location") ?? ""),
-      images: ["https://images.unsplash.com/photo-1494976388531-d1058494cdd8?f_auto&q_auto&w_1200"],
+      images: images.length > 0 ? images : ["https://images.unsplash.com/photo-1494976388531-d1058494cdd8?f_auto&q_auto&w_1200"],
       features: [],
       description: String(fd.get("description") ?? "").trim(),
       status: "pending_approval",
@@ -69,10 +73,42 @@ export default function FleetPage() {
       createdAt: new Date().toISOString(),
     };
     addVehicle(vehicle);
+    setImages([]);
     setSaving(false);
     setAddOpen(false);
     e.currentTarget.reset();
     toast.success("Vehicle submitted — an admin will review & approve it.");
+  };
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files?.length) return;
+    if (images.length + files.length > 8) {
+      toast.error("You can upload up to 8 photos.");
+      return;
+    }
+    const sb = getSupabase();
+    if (!sb) return toast.error("Photo uploads require Supabase.");
+    setUploadingPhotos(true);
+    const uploads: string[] = [];
+    for (const file of Array.from(files)) {
+      if (file.size > 8 * 1024 * 1024) {
+        toast.error(`${file.name} is larger than 8 MB.`);
+        continue;
+      }
+      const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
+      const path = `vehicles/${user.id}/${crypto.randomUUID()}.${ext}`;
+      const { error } = await sb.storage.from("lorarentals").upload(path, file, { contentType: file.type, upsert: false });
+      if (error) {
+        toast.error(`Could not upload ${file.name}: ${error.message}`);
+        continue;
+      }
+      const { data } = sb.storage.from("lorarentals").getPublicUrl(path);
+      uploads.push(data.publicUrl);
+    }
+    setImages((prev) => [...prev, ...uploads]);
+    setUploadingPhotos(false);
+    if (fileRef.current) fileRef.current.value = "";
   };
 
   return (
@@ -146,7 +182,7 @@ export default function FleetPage() {
       )}
 
       {/* Add vehicle dialog */}
-      <Dialog open={addOpen} onOpenChange={setAddOpen}>
+      <Dialog open={addOpen} onOpenChange={(open) => { setAddOpen(open); if (open) setImages([]); }}>
         <DialogContent className="max-w-2xl" onClose={() => setAddOpen(false)}>
           <DialogHeader>
             <DialogTitle>Add a vehicle</DialogTitle>
@@ -188,14 +224,39 @@ export default function FleetPage() {
               <Label className="mb-1.5 block">Description</Label>
               <Textarea name="description" placeholder="Tell renters what makes this car great…" />
             </div>
-            <div className="flex items-center justify-between rounded-xl border border-dashed border-border p-4">
-              <div className="flex items-center gap-3">
-                <ImagePlus className="h-5 w-5 text-muted-foreground" />
-                <p className="text-sm"><span className="font-semibold">Photos</span> · up to 8, Cloudinary-optimized</p>
+            <div className="space-y-3 rounded-xl border border-dashed border-border p-4">
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/*"
+                multiple
+                className="hidden"
+                onChange={handlePhotoUpload}
+              />
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <ImagePlus className="h-5 w-5 text-muted-foreground" />
+                  <p className="text-sm"><span className="font-semibold">Photos</span> · {images.length}/8 uploaded</p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={uploadingPhotos}
+                  onClick={() => fileRef.current?.click()}
+                >
+                  {uploadingPhotos ? "Uploading…" : "Upload"}
+                </Button>
               </div>
-              <Button type="button" variant="outline" size="sm" onClick={() => toast.info("Cloudinary widget plugs in here")}>
-                Upload
-              </Button>
+              {images.length > 0 && (
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                  {images.map((src) => (
+                    <div key={src} className="relative aspect-square overflow-hidden rounded-lg bg-muted">
+                      <Image src={src} alt="" fill className="object-cover" />
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
             <Button type="submit" variant="gold" className="w-full" disabled={saving}>
               {saving ? "Submitting…" : "Submit for approval"}
