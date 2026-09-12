@@ -17,6 +17,7 @@ self.addEventListener("activate", (e) => {
 self.addEventListener("fetch", (e) => {
   const { request } = e;
   if (request.method !== "GET") return;
+  if (!request.url.startsWith("http://") && !request.url.startsWith("https://")) return;
 
   // navigations: network-first, fall back to offline page
   if (request.mode === "navigate") {

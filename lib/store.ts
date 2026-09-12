@@ -66,7 +66,7 @@ import {
 // NOTE: the mock fallback accepts any password for known emails — remove it in production.
 
 export type OtpType = "signup" | "email" | "recovery";
-export type VerifyType = OtpType;
+export type VerifyType = OtpType | "magiclink";
 export interface PendingProfile { name: string; phone: string; role: UserRole; refCode?: string }
 export type RegisterResult =
   | { status: "done"; user: User }
@@ -248,11 +248,18 @@ export const useApp = create<AppState>()(
       verifyOtp: async (email, token, type) => {
         const sb = getSupabase();
         if (!sb) return { ok: false, error: "Verification requires Supabase." };
-        const { data, error } = await sb.auth.verifyOtp({ email, token, type });
-        if (error || !data.user) return { ok: false, error: error?.message ?? "Invalid or expired code." };
-        const u = await get()._loadOrCreateProfile(data.user.id, email);
-        if (!u) return { ok: false, error: "Could not create your profile. Contact support." };
-        return { ok: true, user: u };
+        const types: VerifyType[] = type === "email" ? ["email", "signup", "magiclink"] : [type];
+        let lastError: string | undefined;
+        for (const verifyType of types) {
+          const { data, error } = await sb.auth.verifyOtp({ email, token, type: verifyType });
+          if (!error && data.user) {
+            const u = await get()._loadOrCreateProfile(data.user.id, email);
+            if (!u) return { ok: false, error: "Could not create your profile. Contact support." };
+            return { ok: true, user: u };
+          }
+          lastError = error?.message;
+        }
+        return { ok: false, error: lastError ?? "Invalid or expired code." };
       },
 
       resendOtp: async (email, type) => {
