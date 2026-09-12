@@ -475,6 +475,8 @@ export const useApp = create<AppState>()(
       },
 
       addVehicle: (v) => {
+        const currentUser = get().user;
+        if (currentUser?.role === "owner" && currentUser.kycStatus !== "verified") return;
         set((s) => ({ vehicles: [v, ...s.vehicles] }));
         const sb = getSupabase();
         if (sb) {

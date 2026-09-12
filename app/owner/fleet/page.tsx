@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { EmptyState } from "@/components/empty-state";
+import Link from "next/link";
 import { CAR_TYPES, FUEL_TYPES, RWANDA_LOCATIONS, TRANSMISSIONS } from "@/lib/constants";
 import { useVehicles } from "@/lib/lookup";
 import { useApp } from "@/lib/store";
@@ -36,6 +37,10 @@ export default function FleetPage() {
 
   const submit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (user.kycStatus !== "verified") {
+      toast.error("Complete KYC verification before listing a vehicle.");
+      return;
+    }
     setSaving(true);
     const fd = new FormData(e.currentTarget);
     const vehicle: Vehicle = {
@@ -77,10 +82,19 @@ export default function FleetPage() {
           <h1 className="font-display text-2xl font-extrabold tracking-tight">My Fleet</h1>
           <p className="text-sm text-muted-foreground">{fleet.length} vehicle{fleet.length !== 1 ? "s" : ""} listed</p>
         </div>
-        <Button variant="gold" onClick={() => setAddOpen(true)}>
+        <Button variant="gold" onClick={() => { if (user.kycStatus !== "verified") toast.error("Complete KYC verification before listing a vehicle."); else setAddOpen(true); }}>
           <Plus className="h-4 w-4" /> Add vehicle
         </Button>
       </div>
+
+      {user.kycStatus !== "verified" && (
+        <Card className="border-amber-500/40 bg-amber-500/10">
+          <CardContent className="flex flex-wrap items-center justify-between gap-3 p-4">
+            <p className="text-sm"><strong>KYC verification required.</strong> Your documents must be approved before you can list a vehicle.</p>
+            <Link href="/owner/profile"><Button variant="outline" size="sm">Open Profile &amp; KYC</Button></Link>
+          </CardContent>
+        </Card>
+      )}
 
       {fleet.length === 0 ? (
         <EmptyState
