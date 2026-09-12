@@ -72,7 +72,7 @@ export function AiSearch() {
           onChange={(e) => setQ(e.target.value)}
           placeholder='Try "4x4 in Musanze next weekend" or "luxury car Kigali for 3 days"'
           aria-label="AI search"
-          className="h-12 w-full rounded-2xl border border-gold/40 bg-card pl-11 pr-28 text-sm shadow-lg focus:outline-none focus:ring-2 focus:ring-gold"
+          className="h-12 w-full rounded-2xl border border-gold/40 bg-card pl-11 pr-28 text-sm text-foreground shadow-lg placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-gold"
         />
         <Button
           type="submit"
