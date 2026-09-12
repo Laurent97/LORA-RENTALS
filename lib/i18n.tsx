@@ -1,0 +1,287 @@
+"use client";
+
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import type { Locale } from "@/types";
+
+// ─── Dictionaries ────────────────────────────────────────────────────────────
+// Keys are dot-paths. EN is the source of truth; missing keys fall back to EN.
+
+const en = {
+  "nav.browse": "Browse Cars",
+  "nav.about": "About",
+  "nav.contact": "Contact",
+  "nav.blog": "Blog",
+  "nav.business": "For Business",
+  "nav.signin": "Sign in",
+  "nav.listcar": "List your car",
+  "nav.dashboard": "Dashboard",
+  "nav.logout": "Log out",
+  "hero.title": "Premium car rentals in Rwanda",
+  "hero.subtitle": "Verified owners. Zero booking fees. Pay at pickup — cash, MoMo, or card.",
+  "hero.search": "Search",
+  "hero.location": "Pickup location",
+  "hero.type": "Car type",
+  "hero.start": "Pickup date",
+  "hero.end": "Return date",
+  "hero.ai": "Try: “4x4 in Musanze next weekend”",
+  "common.book": "Book now",
+  "common.viewAll": "View all",
+  "common.featured": "Featured vehicles",
+  "common.payAtPickup": "Pay at pickup",
+  "common.zeroFee": "RWF 0 booking fee",
+  "common.verified": "Verified",
+  "common.perDay": "/day",
+  "common.loading": "Loading…",
+  "common.save": "Save",
+  "common.cancel": "Cancel",
+  "common.confirm": "Confirm",
+  "common.close": "Close",
+  "common.back": "Back",
+  "common.next": "Continue",
+  "common.download": "Download",
+  "common.share": "Share",
+  "common.copy": "Copy",
+  "common.copied": "Copied!",
+  "dash.myBookings": "My Bookings",
+  "dash.favorites": "Favorites",
+  "dash.loyalty": "Loyalty",
+  "dash.referrals": "Invite & Earn",
+  "dash.profile": "Profile",
+  "owner.fleet": "My Fleet",
+  "owner.bookings": "Bookings",
+  "owner.earnings": "Earnings",
+  "owner.availability": "Availability",
+  "admin.overview": "Overview",
+  "admin.users": "Users",
+  "admin.vehicles": "Vehicles",
+  "admin.bookings": "Bookings",
+  "admin.kyc": "KYC Approvals",
+  "admin.sos": "SOS Alerts",
+  "admin.blog": "Blog CMS",
+  "admin.corporate": "Corporate",
+  "sos.button": "SOS",
+  "sos.hold": "Hold 3s for emergency",
+  "sos.title": "Emergency SOS",
+  "sos.accident": "Accident",
+  "sos.breakdown": "Breakdown",
+  "sos.safety": "Safety concern",
+  "sos.other": "Other",
+  "sos.sent": "Alert sent — LORA support notified",
+  "loyalty.title": "LORA Points",
+  "loyalty.redeem": "Redeem at checkout",
+  "referral.title": "Invite & Earn",
+  "referral.share": "Share your link",
+  "airport.title": "Kigali Airport Pickup",
+  "airport.meet": "Meet & Greet",
+  "blog.title": "Travel Guides & News",
+  "blog.read": "Read article",
+  "corp.title": "LORA for Business",
+  "install.title": "Install LORA",
+  "install.desc": "Add to your home screen for faster booking",
+  "install.cta": "Install",
+  "install.dismiss": "Not now",
+  "offline.title": "You're offline",
+  "offline.desc": "Check your bookings next time you're connected.",
+};
+
+const rw: typeof en = {
+  "nav.browse": "Shakisha Imodoka",
+  "nav.about": "Abo turibo",
+  "nav.contact": "Twandikire",
+  "nav.blog": "Amakuru",
+  "nav.business": "Ubucuruzi",
+  "nav.signin": "Injira",
+  "nav.listcar": "Shyira imodoka yawe",
+  "nav.dashboard": "Ikibaho",
+  "nav.logout": "Sohoka",
+  "hero.title": "Kodesha imodoka nziza mu Rwanda",
+  "hero.subtitle": "Nyir'imodoka bemewe. Nta mafaranga yo kubitsa. Wishyura iyo wafashe — cash, MoMo, cyangwa ikarita.",
+  "hero.search": "Shakisha",
+  "hero.location": "Aho ufata imodoka",
+  "hero.type": "Ubwoko bw'imodoka",
+  "hero.start": "Itariki yo gutangira",
+  "hero.end": "Itariki yo kugarura",
+  "hero.ai": "Gerageza: “4x4 i Musanze muri iyi weekend”",
+  "common.book": "Bika nonaha",
+  "common.viewAll": "Reba byose",
+  "common.featured": "Imodoka zatoranyijwe",
+  "common.payAtPickup": "Wishyura iyo wafashe",
+  "common.zeroFee": "RWF 0 yo kubitsa",
+  "common.verified": "Yemejwe",
+  "common.perDay": "/umunsi",
+  "common.loading": "Birimo gutunganywa…",
+  "common.save": "Bika",
+  "common.cancel": "Kureka",
+  "common.confirm": "Emeza",
+  "common.close": "Funga",
+  "common.back": "Subira inyuma",
+  "common.next": "Komeza",
+  "common.download": "Manura",
+  "common.share": "Sangiza",
+  "common.copy": "Koporora",
+  "common.copied": "Byakoporowe!",
+  "dash.myBookings": "Ibyo nabitswe",
+  "dash.favorites": "Ibyo nkunda",
+  "dash.loyalty": "Amanota",
+  "dash.referrals": "Tumira & Winshe",
+  "dash.profile": "Umwirondoro",
+  "owner.fleet": "Imodoka zanjye",
+  "owner.bookings": "Ibyabitswe",
+  "owner.earnings": "Inyungu",
+  "owner.availability": "Igihe cy'imodoka",
+  "admin.overview": "Incamake",
+  "admin.users": "Abakoresha",
+  "admin.vehicles": "Imodoka",
+  "admin.bookings": "Ibyabitswe",
+  "admin.kyc": "KYC",
+  "admin.sos": "SOS",
+  "admin.blog": "Amakuru CMS",
+  "admin.corporate": "Ubucuruzi",
+  "sos.button": "SOS",
+  "sos.hold": "Kanda amasegonda 3",
+  "sos.title": "SOS y'ubwoba",
+  "sos.accident": "Impanuka",
+  "sos.breakdown": "Imodoka yarasebye",
+  "sos.safety": "Umutekano",
+  "sos.other": "Ibindi",
+  "sos.sent": "Ubutumwa bwoherejwe — LORA irabizi",
+  "loyalty.title": "Amanota ya LORA",
+  "loyalty.redeem": "Koresha iyo wishyura",
+  "referral.title": "Tumira & Winshe",
+  "referral.share": "Sangiza link yawe",
+  "airport.title": "Gufata imodoka ku kibuga cy'indege",
+  "airport.meet": "Kwakira umugenzi",
+  "blog.title": "Inyandiko n'amakuru",
+  "blog.read": "Soma",
+  "corp.title": "LORA ku Bucuruzi",
+  "install.title": "Shyira LORA kuri telefone",
+  "install.desc": "Shyira kuri home screen kugira ngo ubike vuba",
+  "install.cta": "Shyira",
+  "install.dismiss": "Oya none",
+  "offline.title": "Nta murandasi",
+  "offline.desc": "Reba ibyabitswe iyo ugaruka kuri murandasi.",
+};
+
+const fr: typeof en = {
+  "nav.browse": "Parcourir les voitures",
+  "nav.about": "À propos",
+  "nav.contact": "Contact",
+  "nav.blog": "Blog",
+  "nav.business": "Entreprises",
+  "nav.signin": "Se connecter",
+  "nav.listcar": "Louer votre voiture",
+  "nav.dashboard": "Tableau de bord",
+  "nav.logout": "Déconnexion",
+  "hero.title": "Location de voitures premium au Rwanda",
+  "hero.subtitle": "Propriétaires vérifiés. Zéro frais de réservation. Payez à la prise en charge — espèces, MoMo ou carte.",
+  "hero.search": "Rechercher",
+  "hero.location": "Lieu de prise en charge",
+  "hero.type": "Type de voiture",
+  "hero.start": "Date de départ",
+  "hero.end": "Date de retour",
+  "hero.ai": "Essayez : « 4x4 à Musanze ce week-end »",
+  "common.book": "Réserver",
+  "common.viewAll": "Voir tout",
+  "common.featured": "Véhicules en vedette",
+  "common.payAtPickup": "Payer à la prise en charge",
+  "common.zeroFee": "0 RWF de frais",
+  "common.verified": "Vérifié",
+  "common.perDay": "/jour",
+  "common.loading": "Chargement…",
+  "common.save": "Enregistrer",
+  "common.cancel": "Annuler",
+  "common.confirm": "Confirmer",
+  "common.close": "Fermer",
+  "common.back": "Retour",
+  "common.next": "Continuer",
+  "common.download": "Télécharger",
+  "common.share": "Partager",
+  "common.copy": "Copier",
+  "common.copied": "Copié !",
+  "dash.myBookings": "Mes réservations",
+  "dash.favorites": "Favoris",
+  "dash.loyalty": "Fidélité",
+  "dash.referrals": "Parrainer & Gagner",
+  "dash.profile": "Profil",
+  "owner.fleet": "Ma flotte",
+  "owner.bookings": "Réservations",
+  "owner.earnings": "Revenus",
+  "owner.availability": "Disponibilité",
+  "admin.overview": "Aperçu",
+  "admin.users": "Utilisateurs",
+  "admin.vehicles": "Véhicules",
+  "admin.bookings": "Réservations",
+  "admin.kyc": "Approbations KYC",
+  "admin.sos": "Alertes SOS",
+  "admin.blog": "CMS Blog",
+  "admin.corporate": "Entreprises",
+  "sos.button": "SOS",
+  "sos.hold": "Maintenez 3s pour l'urgence",
+  "sos.title": "SOS d'urgence",
+  "sos.accident": "Accident",
+  "sos.breakdown": "Panne",
+  "sos.safety": "Sécurité",
+  "sos.other": "Autre",
+  "sos.sent": "Alerte envoyée — support LORA notifié",
+  "loyalty.title": "Points LORA",
+  "loyalty.redeem": "Utiliser au paiement",
+  "referral.title": "Parrainer & Gagner",
+  "referral.share": "Partagez votre lien",
+  "airport.title": "Prise en charge à l'aéroport de Kigali",
+  "airport.meet": "Accueil personnalisé",
+  "blog.title": "Guides de voyage & actualités",
+  "blog.read": "Lire l'article",
+  "corp.title": "LORA pour les entreprises",
+  "install.title": "Installer LORA",
+  "install.desc": "Ajoutez à l'écran d'accueil pour réserver plus vite",
+  "install.cta": "Installer",
+  "install.dismiss": "Plus tard",
+  "offline.title": "Vous êtes hors ligne",
+  "offline.desc": "Consultez vos réservations une fois reconnecté.",
+};
+
+const DICTS: Record<Locale, typeof en> = { en, rw, fr };
+
+export const LOCALES: { value: Locale; label: string; flag: string }[] = [
+  { value: "en", label: "English", flag: "🇬🇧" },
+  { value: "rw", label: "Kinyarwanda", flag: "🇷🇼" },
+  { value: "fr", label: "Français", flag: "🇫🇷" },
+];
+
+// ─── Context ─────────────────────────────────────────────────────────────────
+
+interface I18nCtx {
+  locale: Locale;
+  setLocale: (l: Locale) => void;
+  t: (key: keyof typeof en) => string;
+}
+
+const Ctx = createContext<I18nCtx>({
+  locale: "en",
+  setLocale: () => {},
+  t: (k) => en[k],
+});
+
+const STORAGE_KEY = "lora-locale";
+
+export function I18nProvider({ children }: { children: ReactNode }) {
+  const [locale, setLocaleState] = useState<Locale>("en");
+
+  useEffect(() => {
+    const saved = (typeof window !== "undefined" && localStorage.getItem(STORAGE_KEY)) as Locale | null;
+    if (saved && DICTS[saved]) setLocaleState(saved);
+  }, []);
+
+  const setLocale = (l: Locale) => {
+    setLocaleState(l);
+    localStorage.setItem(STORAGE_KEY, l);
+    document.documentElement.lang = l;
+  };
+
+  const t = (key: keyof typeof en) => DICTS[locale][key] ?? en[key] ?? key;
+
+  return <Ctx.Provider value={{ locale, setLocale, t }}>{children}</Ctx.Provider>;
+}
+
+export const useI18n = () => useContext(Ctx);
+export const useT = () => useContext(Ctx).t;

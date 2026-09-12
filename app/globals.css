@@ -1,0 +1,75 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 220 20% 98%;
+    --foreground: 222 47% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+    --primary: 220 74% 15%;
+    --primary-foreground: 45 65% 52%;
+    --secondary: 214 20% 93%;
+    --secondary-foreground: 222 47% 11%;
+    --muted: 214 20% 93%;
+    --muted-foreground: 215 16% 47%;
+    --accent: 45 65% 52%;
+    --accent-foreground: 220 74% 15%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 214 20% 88%;
+    --input: 214 20% 88%;
+    --ring: 45 65% 52%;
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    --background: 222 47% 7%;
+    --foreground: 214 20% 93%;
+    --card: 220 40% 11%;
+    --card-foreground: 214 20% 93%;
+    --popover: 220 40% 11%;
+    --popover-foreground: 214 20% 93%;
+    --primary: 45 65% 52%;
+    --primary-foreground: 220 74% 15%;
+    --secondary: 220 30% 16%;
+    --secondary-foreground: 214 20% 93%;
+    --muted: 220 30% 16%;
+    --muted-foreground: 215 16% 65%;
+    --accent: 45 65% 52%;
+    --accent-foreground: 220 74% 15%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 220 30% 18%;
+    --input: 220 30% 18%;
+    --ring: 45 65% 52%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+}
+
+@layer utilities {
+  .glass {
+    @apply bg-white/80 dark:bg-navy-900/80 backdrop-blur-xl;
+  }
+  .text-gradient-gold {
+    @apply bg-gradient-to-r from-gold-300 via-gold to-gold-500 bg-clip-text text-transparent;
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}

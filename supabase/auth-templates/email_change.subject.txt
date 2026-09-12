@@ -1,0 +1,1 @@
+Verify New Email — Code: {{ .Token }}

@@ -1,0 +1,1 @@
+Reset Your LORA Password — Code: {{ .Token }}
