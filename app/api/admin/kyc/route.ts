@@ -12,8 +12,9 @@ const schema = z.object({
 
 export async function POST(request: Request) {
   const sb = getSupabaseAdmin();
+  if (!sb) return NextResponse.json({ error: "Server misconfigured: missing SUPABASE_SERVICE_ROLE_KEY." }, { status: 500 });
   const caller = await getCallerProfile(request.headers.get("authorization"));
-  if (!sb || !caller) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!caller) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (caller.role !== "admin") return NextResponse.json({ error: "Only admins can review KYC." }, { status: 403 });
   const parsed = schema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "Invalid KYC action." }, { status: 400 });
