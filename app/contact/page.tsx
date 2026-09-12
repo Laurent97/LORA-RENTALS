@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Mail, MapPin, MessageCircle, Phone } from "lucide-react";
 import { toast } from "sonner";
+import { Mail, MapPin, MessageCircle, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -38,9 +38,10 @@ export default function ContactPage() {
         <div className="mt-12 grid gap-6 md:grid-cols-[1fr_1.2fr]">
           <div className="space-y-4">
             {[
-              { icon: Phone, label: "Phone / WhatsApp", value: BRAND.phone },
-              { icon: Mail, label: "Email", value: BRAND.email },
-              { icon: MapPin, label: "Office", value: BRAND.address },
+              { icon: Phone, label: "Phone / WhatsApp", value: BRAND.phone, href: `tel:${BRAND.phone.replace(/\s/g, "")}` },
+              { icon: Mail, label: "Support", value: BRAND.supportEmail, href: `mailto:${BRAND.supportEmail}` },
+              { icon: Mail, label: "General", value: BRAND.email, href: `mailto:${BRAND.email}` },
+              { icon: MapPin, label: "Office", value: BRAND.address, href: undefined },
             ].map((c) => (
               <Card key={c.label}>
                 <CardContent className="flex items-center gap-4 p-5">
@@ -49,7 +50,7 @@ export default function ContactPage() {
                   </span>
                   <div>
                     <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{c.label}</p>
-                    <p className="text-sm font-semibold">{c.value}</p>
+                    {c.href ? <a href={c.href} className="text-sm font-semibold hover:text-gold-600 dark:hover:text-gold">{c.value}</a> : <p className="text-sm font-semibold">{c.value}</p>}
                   </div>
                 </CardContent>
               </Card>

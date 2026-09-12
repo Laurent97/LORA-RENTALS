@@ -4,6 +4,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type {
   AirportBooking,
+  AppNotification,
   AvailabilityEntry,
   Booking,
   CorporateAccount,
@@ -124,6 +125,7 @@ interface AppState {
   vehicles: Vehicle[];
   users: User[];
   reviews: Review[];
+  notifications: AppNotification[];
   bookings: Booking[];
   hydrate: () => Promise<void>;
   addVehicle: (v: Vehicle) => void;
@@ -160,6 +162,13 @@ interface AppState {
   updateCorporateStatus: (id: string, status: CorporateAccount["status"]) => void;
   addAirportBooking: (a: AirportBooking) => void;
   updateUserKyc: (userId: string, status: User["kycStatus"]) => void;
+
+  // reviews — local mutations; server routes handle persistence + emails
+  upsertReviewLocal: (r: Review) => void;
+  flagReviewLocal: (reviewId: string) => void;
+  removeReviewLocal: (reviewId: string, replyOnly?: boolean) => void;
+  setReviewStatusLocal: (reviewId: string, status: Review["status"]) => void;
+  markNotificationRead: (id: string) => void;
 }
 
 export const LOYALTY_TIERS: { tier: LoyaltyTier; min: number; label: string }[] = [
@@ -349,6 +358,7 @@ export const useApp = create<AppState>()(
       vehicles: SEED_VEHICLES,
       users: ALL_USERS,
       reviews: SEED_REVIEWS,
+      notifications: [],
       bookings: SEED_BOOKINGS,
       locations: [],
       availability: [],
@@ -370,12 +380,13 @@ export const useApp = create<AppState>()(
           return;
         }
         try {
-          const [u, v, b, r, loc, av, loy, pts, ref, insp, sos, posts, corp, cm, inv, ap, fx] =
+          const [u, v, b, r, n, loc, av, loy, pts, ref, insp, sos, posts, corp, cm, inv, ap, fx] =
             await Promise.all([
               sb.from("users").select("*"),
               sb.from("vehicles").select("*"),
               sb.from("bookings").select("*"),
-              sb.from("reviews").select("*, customer:users!customer_id(name)"),
+              sb.from("reviews").select("*, customer:users!customer_id(name), reply:review_replies(*, owner:users!owner_id(name))"),
+              sb.from("notifications").select("*").order("created_at", { ascending: false }).limit(50),
               sb.from("locations").select("*"),
               sb.from("vehicle_availability").select("*"),
               sb.from("loyalty_points").select("*"),
@@ -401,6 +412,15 @@ export const useApp = create<AppState>()(
             users: u.data?.length ? u.data.map(userFromRow) : get().users,
             vehicles: v.data?.length ? v.data.map(vehicleFromRow) : get().vehicles,
             reviews: (r.data ?? []).map(reviewFromRow),
+            notifications: (n.data ?? []).map((x: Record<string, unknown>) => ({
+              id: x.id as string,
+              userId: x.user_id as string,
+              type: x.type as AppNotification["type"],
+              title: x.title as string,
+              message: x.message as string,
+              read: (x.read as boolean) ?? false,
+              createdAt: x.created_at as string,
+            })),
             bookings: [...localOnly, ...dbBookings],
             locations: (loc.data ?? []).map(locationFromRow),
             availability: (av.data ?? []).map(availabilityFromRow),
@@ -728,6 +748,47 @@ export const useApp = create<AppState>()(
           sb.from("airport_bookings")
             .insert(airportToRow(a))
             .then(({ error }) => error && console.warn("airport booking sync failed:", error.message));
+        }
+      },
+
+      // ── Reviews (local mutations — API routes own persistence) ─────────────
+
+      upsertReviewLocal: (r) =>
+        set((s) => ({
+          reviews: s.reviews.some((x) => x.id === r.id)
+            ? s.reviews.map((x) => (x.id === r.id ? r : x))
+            : [r, ...s.reviews],
+        })),
+
+      flagReviewLocal: (reviewId) =>
+        set((s) => ({
+          reviews: s.reviews.map((x) =>
+            x.id === reviewId ? { ...x, flagCount: x.flagCount + 1, status: x.flagCount + 1 >= 3 ? "hidden" : "flagged" } : x
+          ),
+        })),
+
+      removeReviewLocal: (reviewId, replyOnly) =>
+        set((s) => ({
+          reviews: replyOnly
+            ? s.reviews.map((x) => (x.id === reviewId ? { ...x, reply: undefined } : x))
+            : s.reviews.filter((x) => x.id !== reviewId),
+        })),
+
+      setReviewStatusLocal: (reviewId, status) =>
+        set((s) => ({
+          reviews: s.reviews.map((x) => (x.id === reviewId ? { ...x, status } : x)),
+        })),
+
+      markNotificationRead: (id) => {
+        set((s) => ({
+          notifications: s.notifications.map((n) => (n.id === id ? { ...n, read: true } : n)),
+        }));
+        const sb = getSupabase();
+        if (sb) {
+          sb.from("notifications")
+            .update({ read: true })
+            .eq("id", id)
+            .then(({ error }) => error && console.warn("notification sync failed:", error.message));
         }
       },
 

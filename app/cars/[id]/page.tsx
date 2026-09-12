@@ -20,6 +20,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Rating } from "@/components/rating";
+import { RatingBreakdown } from "@/components/reviews/rating-breakdown";
+import { ReviewList } from "@/components/reviews/review-list";
+import { ratingBreakdown } from "@/lib/reviews/analytics";
 import { MapPlaceholder } from "@/components/map-placeholder";
 import { CarCard } from "@/components/car-card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -36,7 +39,7 @@ export default function CarDetailPage() {
   const users = useAllUsers();
   const allReviews = useReviews();
   const vehicle = vehicles.find((v) => v.id === id);
-  const { favorites, toggleFavorite, currency, user } = useApp();
+  const { favorites, toggleFavorite, currency, user, upsertReviewLocal } = useApp();
   const hydrated = useHydrated();
   const [imgIdx, setImgIdx] = useState(0);
 
@@ -55,7 +58,7 @@ export default function CarDetailPage() {
   }
 
   const owner = users.find((u) => u.id === vehicle.ownerId);
-  const reviews = allReviews.filter((r) => r.vehicleId === vehicle.id);
+  const reviews = allReviews.filter((r) => r.vehicleId === vehicle.id && r.status === "published");
   const similar = vehicles.filter(
     (v) => v.id !== vehicle.id && v.status === "available" && (v.type === vehicle.type || v.location === vehicle.location)
   ).slice(0, 3);
@@ -217,33 +220,14 @@ export default function CarDetailPage() {
             {reviews.length === 0 ? (
               <p className="text-sm text-muted-foreground">No reviews yet — be the first to rent this car.</p>
             ) : (
-              <div className="space-y-4">
-                {reviews.map((r) => {
-                  const reviewer = users.find((u) => u.id === r.customerId);
-                  return (
-                    <div key={r.id} className="rounded-2xl border border-border bg-card p-5">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary text-xs font-bold">
-                            {initials(r.customerName)}
-                          </span>
-                          <div>
-                            <p className="text-sm font-semibold">{r.customerName}</p>
-                            <p className="text-xs text-muted-foreground">{fmtDate(r.createdAt)}</p>
-                          </div>
-                        </div>
-                        <Rating value={r.rating} />
-                      </div>
-                      <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{r.comment}</p>
-                      {r.ownerReply && (
-                        <div className="mt-3 rounded-xl bg-secondary/60 p-3 text-xs">
-                          <span className="font-semibold">Owner reply:</span> {r.ownerReply}
-                        </div>
-                      )}
-                      {reviewer && <span className="sr-only">{reviewer.id}</span>}
-                    </div>
-                  );
-                })}
+              <div className="space-y-5">
+                <RatingBreakdown breakdown={ratingBreakdown(reviews)} />
+                <ReviewList
+                  reviews={reviews}
+                  onChanged={upsertReviewLocal}
+                  emptyTitle="No reviews yet"
+                  emptyDescription="Be the first to rent this car."
+                />
               </div>
             )}
           </div>

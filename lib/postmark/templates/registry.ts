@@ -8,6 +8,7 @@ import { disputes } from "./disputes";
 import { inspections } from "./inspections";
 import { corporate } from "./corporate";
 import { marketing } from "./marketing";
+import { reviews } from "./reviews";
 import type { EmailTemplate, TemplateData } from "../types";
 
 export const templates = {
@@ -21,6 +22,7 @@ export const templates = {
   ...inspections,
   ...corporate,
   ...marketing,
+  ...reviews,
 } as const;
 
 export type TemplateSlug = keyof typeof templates;

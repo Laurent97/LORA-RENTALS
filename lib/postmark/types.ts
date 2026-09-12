@@ -30,7 +30,8 @@ export type TemplateCategory =
   | "disputes"
   | "inspections"
   | "corporate"
-  | "marketing";
+  | "marketing"
+  | "reviews";
 
 // Identity helper that preserves the concrete data type of each template.
 export const defineTemplate = <D extends TemplateData>(t: EmailTemplate<D>) => t;

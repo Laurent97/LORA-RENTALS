@@ -9,6 +9,8 @@ export const BRAND = {
   whatsapp: "250787988039",
   email: "hello@lorarentals.org",
   supportEmail: "support@lorarentals.org",
+  financeEmail: "finances@lorarentals.org",
+  adminEmail: "admin@lorarentals.org",
   domain: "lorarentals.org",
   siteUrl: "https://lorarentals.org",
   address: "KG 7 Ave, Kigali Heights, Kigali, Rwanda",

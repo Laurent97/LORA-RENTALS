@@ -76,11 +76,108 @@ create table if not exists public.reviews (
   booking_id uuid not null references public.bookings(id),
   vehicle_id uuid not null references public.vehicles(id),
   customer_id uuid not null references public.users(id),
+  owner_id uuid references public.users(id),
   rating int not null check (rating between 1 and 5),
+  title text,
   comment text,
-  owner_reply text,
+  photos jsonb not null default '[]'::jsonb,
+  tags text[] not null default '{}',
+  status text not null default 'published'
+    check (status in ('published','hidden','flagged','removed')),
+  flagged_by uuid[] not null default '{}',
+  flag_reason text,
+  admin_note text,
+  removed_by uuid references public.users(id),
+  removed_at timestamptz,
+  removal_reason text,
+  edited_at timestamptz,
+  edit_count int not null default 0,
+  is_verified_booking boolean not null default true,
+  helpful_count int not null default 0,
+  owner_reply text, -- legacy column; replies live in review_replies
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+-- one review per booking
+create unique index if not exists reviews_booking_uidx on public.reviews(booking_id);
+create index if not exists reviews_vehicle_idx on public.reviews(vehicle_id);
+create index if not exists reviews_customer_idx on public.reviews(customer_id);
+create index if not exists reviews_owner_idx on public.reviews(owner_id);
+create index if not exists reviews_status_idx on public.reviews(status);
+
+create table if not exists public.review_replies (
+  id uuid primary key default uuid_generate_v4(),
+  review_id uuid not null references public.reviews(id) on delete cascade,
+  owner_id uuid not null references public.users(id),
+  comment text not null,
+  edited_at timestamptz,
+  created_at timestamptz not null default now(),
+  unique (review_id) -- one reply per review
+);
+create index if not exists review_replies_review_idx on public.review_replies(review_id);
+
+create table if not exists public.review_helpful_votes (
+  id uuid primary key default uuid_generate_v4(),
+  review_id uuid not null references public.reviews(id) on delete cascade,
+  user_id uuid not null references public.users(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  unique (review_id, user_id)
+);
+
+create table if not exists public.review_reports (
+  id uuid primary key default uuid_generate_v4(),
+  review_id uuid not null references public.reviews(id) on delete cascade,
+  reported_by uuid not null references public.users(id),
+  reason text not null,
+  details text,
+  status text not null default 'pending' check (status in ('pending','reviewed','dismissed','actioned')),
+  reviewed_by uuid references public.users(id),
+  reviewed_at timestamptz,
   created_at timestamptz not null default now()
 );
+create index if not exists review_reports_review_idx on public.review_reports(review_id);
+create index if not exists review_reports_status_idx on public.review_reports(status);
+
+create table if not exists public.review_audit_log (
+  id uuid primary key default uuid_generate_v4(),
+  review_id uuid,
+  reply_id uuid,
+  action text not null,
+  actor_id uuid references public.users(id),
+  actor_role text,
+  old_value jsonb,
+  new_value jsonb,
+  reason text,
+  ip_address inet,
+  created_at timestamptz not null default now()
+);
+create index if not exists review_audit_review_idx on public.review_audit_log(review_id);
+
+-- migrate legacy owner_reply text into review_replies (idempotent)
+insert into public.review_replies (review_id, owner_id, comment)
+select r.id, coalesce(r.owner_id, b.owner_id), r.owner_reply
+from public.reviews r
+join public.bookings b on b.id = r.booking_id
+where r.owner_reply is not null and r.owner_reply <> ''
+  and not exists (select 1 from public.review_replies rr where rr.review_id = r.id);
+
+-- keep vehicles.rating / review_count in sync with published reviews
+create or replace function public.update_vehicle_rating()
+returns trigger language plpgsql as $$
+declare vid uuid := coalesce(new.vehicle_id, old.vehicle_id);
+begin
+  update public.vehicles set
+    rating = coalesce((select round(avg(rating)::numeric,1) from public.reviews where vehicle_id = vid and status = 'published'), 0),
+    review_count = (select count(*) from public.reviews where vehicle_id = vid and status = 'published')
+  where id = vid;
+  return coalesce(new, old);
+end;
+$$;
+
+drop trigger if exists trg_review_rating on public.reviews;
+create trigger trg_review_rating
+after insert or update or delete on public.reviews
+for each row execute function public.update_vehicle_rating();
 
 create table if not exists public.payments (
   id uuid primary key default uuid_generate_v4(),
@@ -162,12 +259,92 @@ create policy "bookings_customer_insert" on public.bookings for insert
 create policy "bookings_update" on public.bookings for update
   using (customer_id = auth.uid() or owner_id = auth.uid() or public.is_admin());
 
--- reviews: public read; customers write own
+-- reviews: public reads published only; parties read own; admins read all.
+-- Customers create for their own completed bookings and may edit within 7 days
+-- (until the owner replies). NO delete policy for customers/owners — only
+-- admins can delete, and only via the service-role API route.
 drop policy if exists "reviews_read" on public.reviews;
 drop policy if exists "reviews_insert" on public.reviews;
-create policy "reviews_read" on public.reviews for select using (true);
-create policy "reviews_insert" on public.reviews for insert
-  with check (customer_id = auth.uid());
+drop policy if exists "reviews_public_read" on public.reviews;
+drop policy if exists "reviews_parties_read" on public.reviews;
+drop policy if exists "reviews_customer_insert" on public.reviews;
+drop policy if exists "reviews_customer_update" on public.reviews;
+drop policy if exists "reviews_admin_delete" on public.reviews;
+drop policy if exists "reviews_admin_update" on public.reviews;
+create policy "reviews_public_read" on public.reviews for select
+  using (status = 'published');
+create policy "reviews_parties_read" on public.reviews for select
+  using (customer_id = auth.uid() or owner_id = auth.uid() or public.is_admin());
+create policy "reviews_customer_insert" on public.reviews for insert
+  with check (
+    customer_id = auth.uid()
+    and exists (
+      select 1 from public.bookings b
+      where b.id = booking_id and b.customer_id = auth.uid() and b.status = 'completed'
+    )
+  );
+create policy "reviews_customer_update" on public.reviews for update
+  using (
+    customer_id = auth.uid()
+    and edit_count < 1
+    and created_at > now() - interval '7 days'
+    and not exists (select 1 from public.review_replies rr where rr.review_id = reviews.id)
+  );
+create policy "reviews_admin_update" on public.reviews for update using (public.is_admin());
+create policy "reviews_admin_delete" on public.reviews for delete using (public.is_admin());
+
+alter table public.review_replies enable row level security;
+alter table public.review_helpful_votes enable row level security;
+alter table public.review_reports enable row level security;
+alter table public.review_audit_log enable row level security;
+
+-- replies: public reads replies on published reviews; owners reply once on own
+-- cars and may edit within 48h; admins manage all. No owner delete.
+drop policy if exists "replies_public_read" on public.review_replies;
+drop policy if exists "replies_owner_insert" on public.review_replies;
+drop policy if exists "replies_owner_update" on public.review_replies;
+drop policy if exists "replies_admin" on public.review_replies;
+create policy "replies_public_read" on public.review_replies for select
+  using (exists (select 1 from public.reviews r where r.id = review_id and r.status = 'published'));
+create policy "replies_owner_insert" on public.review_replies for insert
+  with check (
+    owner_id = auth.uid()
+    and exists (
+      select 1 from public.reviews r
+      where r.id = review_id and r.owner_id = auth.uid() and r.status = 'published'
+    )
+  );
+create policy "replies_owner_update" on public.review_replies for update
+  using (owner_id = auth.uid() and created_at > now() - interval '48 hours');
+create policy "replies_admin" on public.review_replies for all using (public.is_admin());
+
+-- helpful votes: anyone logged in votes once; public read
+drop policy if exists "helpful_read" on public.review_helpful_votes;
+drop policy if exists "helpful_insert" on public.review_helpful_votes;
+drop policy if exists "helpful_delete" on public.review_helpful_votes;
+create policy "helpful_read" on public.review_helpful_votes for select using (true);
+create policy "helpful_insert" on public.review_helpful_votes for insert with check (user_id = auth.uid());
+create policy "helpful_delete" on public.review_helpful_votes for delete using (user_id = auth.uid());
+
+-- reports: parties flag; admins manage
+drop policy if exists "reports_insert" on public.review_reports;
+drop policy if exists "reports_read" on public.review_reports;
+drop policy if exists "reports_admin" on public.review_reports;
+create policy "reports_insert" on public.review_reports for insert
+  with check (
+    reported_by = auth.uid()
+    and exists (
+      select 1 from public.reviews r
+      where r.id = review_id and (r.customer_id = auth.uid() or r.owner_id = auth.uid() or public.is_admin())
+    )
+  );
+create policy "reports_read" on public.review_reports for select
+  using (reported_by = auth.uid() or public.is_admin());
+create policy "reports_admin" on public.review_reports for update using (public.is_admin());
+
+-- audit log: written by service role only; admins read
+drop policy if exists "audit_admin_read" on public.review_audit_log;
+create policy "audit_admin_read" on public.review_audit_log for select using (public.is_admin());
 
 -- payments: parties + admin
 drop policy if exists "payments_read" on public.payments;
@@ -196,6 +373,32 @@ alter table public.users add column if not exists preferred_locale text default 
 
 alter table public.vehicles add column if not exists payment_methods text[] not null default '{cash,momo,card}';
 alter table public.vehicles add column if not exists airport_approved boolean not null default false;
+
+-- reviews: upgrade path for databases created before the review system
+alter table public.reviews add column if not exists owner_id uuid references public.users(id);
+alter table public.reviews add column if not exists title text;
+alter table public.reviews add column if not exists photos jsonb not null default '[]'::jsonb;
+alter table public.reviews add column if not exists tags text[] not null default '{}';
+alter table public.reviews add column if not exists status text not null default 'published';
+alter table public.reviews add column if not exists flagged_by uuid[] not null default '{}';
+alter table public.reviews add column if not exists flag_reason text;
+alter table public.reviews add column if not exists admin_note text;
+alter table public.reviews add column if not exists removed_by uuid references public.users(id);
+alter table public.reviews add column if not exists removed_at timestamptz;
+alter table public.reviews add column if not exists removal_reason text;
+alter table public.reviews add column if not exists edited_at timestamptz;
+alter table public.reviews add column if not exists edit_count int not null default 0;
+alter table public.reviews add column if not exists is_verified_booking boolean not null default true;
+alter table public.reviews add column if not exists helpful_count int not null default 0;
+alter table public.reviews add column if not exists updated_at timestamptz not null default now();
+-- backfill owner_id from the booking
+update public.reviews r set owner_id = b.owner_id
+from public.bookings b where b.id = r.booking_id and r.owner_id is null;
+
+-- notifications: allow the 'review' type
+alter table public.notifications drop constraint if exists notifications_type_check;
+alter table public.notifications add constraint notifications_type_check
+  check (type in ('booking','payment','kyc','system','promo','review'));
 
 alter table public.bookings add column if not exists qr_token text;
 alter table public.bookings add column if not exists picked_up_at timestamptz;

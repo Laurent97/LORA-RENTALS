@@ -1,11 +1,12 @@
 "use client";
 
-import { CalendarDays, Gift, Heart, LayoutDashboard, Star, UserRound } from "lucide-react";
+import { CalendarDays, Gift, Heart, LayoutDashboard, MessageSquare, Star, UserRound } from "lucide-react";
 import { DashboardShell, type NavItem } from "@/components/layout/dashboard-shell";
 
 const NAV: NavItem[] = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
   { href: "/dashboard/bookings", label: "My Bookings", icon: CalendarDays },
+  { href: "/dashboard/reviews", label: "My Reviews", icon: MessageSquare },
   { href: "/dashboard/favorites", label: "Favorites", icon: Heart },
   { href: "/dashboard/loyalty", label: "Loyalty", icon: Star },
   { href: "/dashboard/referrals", label: "Invite & Earn", icon: Gift },

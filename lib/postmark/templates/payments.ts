@@ -121,4 +121,52 @@ export const payments = {
       signature(t),
     ].join(""),
   }),
+
+  "payment-initiated": defineTemplate({
+    name: "Payment initiated", category: "payments",
+    subject: () => "Payment Initiated — Complete on Your Phone",
+    preheader: (d) => `Complete your ${fmtRWF(d.amount_rwf)} LORA payment on your phone.`,
+    sample: { ...P, ussd_code: "*182*1*1*0781234567*5000#" },
+    html: (d, t) => [badge("📱 Payment started", "gold"), greeting(t, d.first_name), p(`Your payment of <strong>${fmtRWF(d.amount_rwf)}</strong> for booking #${esc(d.booking_id)} is ready.`), infoCard("Dial from your Rwanda SIM", [["USSD code", `<span style="font-family:'Courier New',monospace;">${esc(d.ussd_code)}</span>`], ["Booking fee", "RWF 0"]]), p("Open the dialer, tap Call, and enter your Mobile Money PIN. LORA never receives your PIN.", { muted: true }), signature(t)].join(""),
+  }),
+
+  "payment-awaiting-pin": defineTemplate({
+    name: "Payment awaiting PIN", category: "payments",
+    subject: () => "Enter Your PIN to Complete Payment",
+    preheader: () => "Your LORA payment is waiting for PIN entry.",
+    sample: { ...P, minutes_left: 3 },
+    html: (d, t) => [badge("⏳ Payment waiting", "warning"), greeting(t, d.first_name), p(`Your ${fmtRWF(d.amount_rwf)} payment for booking #${esc(d.booking_id)} has not been completed yet.`), alert("Open your Mobile Money prompt and enter your PIN before the payment expires.", "warning"), button("Return to payment →", d.receipt_url), signature(t)].join(""),
+  }),
+
+  "payment-failed": defineTemplate({
+    name: "Payment failed", category: "payments",
+    subject: () => "Payment Failed — Try Again",
+    preheader: (d) => `Your ${fmtRWF(d.amount_rwf)} payment needs another attempt.`,
+    sample: { ...P, reason: "The provider declined the request" },
+    html: (d, t) => [badge("Payment not completed", "warning"), greeting(t, d.first_name), p(`We could not confirm your payment of <strong>${fmtRWF(d.amount_rwf)}</strong> for booking #${esc(d.booking_id)}.`), infoCard("What happened", [["Reason", esc(d.reason)], ["Booking fee", "RWF 0"]]), button("Try payment again →", d.receipt_url), signature(t)].join(""),
+  }),
+
+  "payment-timeout": defineTemplate({
+    name: "Payment timeout", category: "payments",
+    subject: () => "Payment Timed Out — Retry Available",
+    preheader: () => "Your LORA payment window expired without confirmation.",
+    sample: { ...P },
+    html: (d, t) => [badge("⌛ Payment expired", "warning"), greeting(t, d.first_name), p(`The payment window for booking #${esc(d.booking_id)} expired. No booking fee was charged.`), button("Retry payment →", d.receipt_url), signature(t)].join(""),
+  }),
+
+  "payment-partial-received": defineTemplate({
+    name: "Partial payment received", category: "payments",
+    subject: () => "Deposit Received — Balance Due at Pickup",
+    preheader: (d) => `${fmtRWF(d.amount_rwf)} received. Your remaining balance is ${fmtRWF(d.balance_rwf)}.`,
+    sample: { ...P, balance_rwf: 120000 },
+    html: (d, t) => [badge("✅ Deposit received", "success"), greeting(t, d.first_name), p(`We received your deposit for booking #${esc(d.booking_id)}.`), infoCard(esc(d.car_name), [["Deposit", fmtRWF(d.amount_rwf)], ["Balance at pickup", fmtRWF(d.balance_rwf)], ["Booking fee", "RWF 0"]]), button("View booking →", d.receipt_url), signature(t)].join(""),
+  }),
+
+  "admin-payment-manual-review": defineTemplate({
+    name: "Admin manual payment review", category: "payments",
+    subject: () => "[Admin] Manual Payment Review Needed",
+    preheader: (d) => `Review ${fmtRWF(d.amount_rwf)} for booking #${d.booking_id}.`,
+    sample: { ...P, customer_phone: "078 123 4567" },
+    html: (d, t) => [badge("Manual review needed", "warning"), h1("Payment requires review", { center: true }), p(`A customer marked a <strong>${fmtRWF(d.amount_rwf)}</strong> payment as completed for booking #${esc(d.booking_id)}.`), infoCard("Payment details", [["Customer", esc(d.first_name)], ["Phone", esc(d.customer_phone)], ["Provider", esc(d.payment_method)]]), button("Open payment dashboard →", d.receipt_url, "navy"), signature(t)].join(""),
+  }),
 };

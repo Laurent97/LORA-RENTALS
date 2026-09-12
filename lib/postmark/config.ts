@@ -12,6 +12,8 @@ export const EMAIL = {
   stream: process.env.POSTMARK_MESSAGE_STREAM ?? "outbound",
   broadcastStream: process.env.POSTMARK_BROADCAST_STREAM ?? "broadcast",
   supportEmail: BRAND.supportEmail,
+  financeEmail: BRAND.financeEmail,
+  adminEmail: BRAND.adminEmail,
   phoneDisplay: BRAND.phone,
   phoneE164: `+${BRAND.whatsapp}`,
   whatsappUrl: `https://wa.me/${BRAND.whatsapp}`,

@@ -105,15 +105,76 @@ export interface Booking {
   createdAt: string;
 }
 
+export type ReviewStatus = "published" | "hidden" | "flagged" | "removed";
+export type ReviewReportStatus = "pending" | "reviewed" | "dismissed" | "actioned";
+
+export interface ReviewReply {
+  id: string;
+  reviewId: string;
+  ownerId: string;
+  ownerName?: string;
+  comment: string;
+  editedAt?: string;
+  createdAt: string;
+}
+
 export interface Review {
   id: string;
   bookingId: string;
   vehicleId: string;
   customerId: string;
+  ownerId: string;
   customerName: string;
   rating: number; // 1-5
+  title?: string;
   comment: string;
-  ownerReply?: string;
+  photos: string[]; // Cloudinary URLs
+  tags: string[];
+  status: ReviewStatus;
+  flagCount: number;
+  flagReason?: string;
+  adminNote?: string;
+  editedAt?: string;
+  editCount: number;
+  isVerifiedBooking: boolean;
+  helpfulCount: number;
+  reply?: ReviewReply;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ReviewReport {
+  id: string;
+  reviewId: string;
+  reportedBy: string;
+  reason: string;
+  details?: string;
+  status: ReviewReportStatus;
+  createdAt: string;
+}
+
+export type ReviewAuditAction =
+  | "created"
+  | "edited"
+  | "replied"
+  | "reply_edited"
+  | "flagged"
+  | "hidden"
+  | "restored"
+  | "flags_dismissed"
+  | "deleted"
+  | "reply_deleted";
+
+export interface ReviewAuditEntry {
+  id: string;
+  reviewId?: string;
+  replyId?: string;
+  action: ReviewAuditAction;
+  actorId?: string;
+  actorRole?: string;
+  oldValue?: Record<string, unknown>;
+  newValue?: Record<string, unknown>;
+  reason?: string;
   createdAt: string;
 }
 
@@ -140,7 +201,7 @@ export interface Dispute {
 export interface AppNotification {
   id: string;
   userId: string;
-  type: "booking" | "payment" | "kyc" | "system" | "promo";
+  type: "booking" | "payment" | "kyc" | "system" | "promo" | "review";
   title: string;
   message: string;
   read: boolean;

@@ -12,6 +12,9 @@ import type {
   Post,
   Referral,
   Review,
+  ReviewAuditEntry,
+  ReviewReply,
+  ReviewReport,
   SosAlert,
   User,
   Vehicle,
@@ -180,15 +183,76 @@ export const bookingToRow = (b: Booking) => ({
   po_number: b.poNumber ?? null,
 });
 
+export const replyFromRow = (r: any): ReviewReply => ({
+  id: r.id,
+  reviewId: r.review_id,
+  ownerId: r.owner_id,
+  ownerName: r.owner?.name ?? undefined,
+  comment: r.comment,
+  editedAt: r.edited_at ?? undefined,
+  createdAt: r.created_at,
+});
+
 export const reviewFromRow = (r: any): Review => ({
   id: r.id,
   bookingId: r.booking_id,
   vehicleId: r.vehicle_id,
   customerId: r.customer_id,
+  ownerId: r.owner_id ?? "",
   customerName: r.customer?.name ?? "Customer",
   rating: r.rating,
+  title: r.title ?? undefined,
   comment: r.comment ?? "",
-  ownerReply: r.owner_reply ?? undefined,
+  photos: Array.isArray(r.photos) ? r.photos : [],
+  tags: r.tags ?? [],
+  status: r.status ?? "published",
+  flagCount: Array.isArray(r.flagged_by) ? r.flagged_by.length : 0,
+  flagReason: r.flag_reason ?? undefined,
+  adminNote: r.admin_note ?? undefined,
+  editedAt: r.edited_at ?? undefined,
+  editCount: r.edit_count ?? 0,
+  isVerifiedBooking: r.is_verified_booking ?? true,
+  helpfulCount: r.helpful_count ?? 0,
+  reply: r.reply ? replyFromRow(Array.isArray(r.reply) ? r.reply[0] : r.reply) : undefined,
+  createdAt: r.created_at,
+  updatedAt: r.updated_at ?? r.created_at,
+});
+
+export const reviewToRow = (r: Review) => ({
+  id: r.id,
+  booking_id: r.bookingId,
+  vehicle_id: r.vehicleId,
+  customer_id: r.customerId,
+  owner_id: r.ownerId || null,
+  rating: r.rating,
+  title: r.title ?? null,
+  comment: r.comment,
+  photos: r.photos,
+  tags: r.tags,
+  status: r.status,
+  is_verified_booking: r.isVerifiedBooking,
+});
+
+export const reviewReportFromRow = (r: any): ReviewReport => ({
+  id: r.id,
+  reviewId: r.review_id,
+  reportedBy: r.reported_by,
+  reason: r.reason,
+  details: r.details ?? undefined,
+  status: r.status,
+  createdAt: r.created_at,
+});
+
+export const reviewAuditFromRow = (r: any): ReviewAuditEntry => ({
+  id: r.id,
+  reviewId: r.review_id ?? undefined,
+  replyId: r.reply_id ?? undefined,
+  action: r.action,
+  actorId: r.actor_id ?? undefined,
+  actorRole: r.actor_role ?? undefined,
+  oldValue: r.old_value ?? undefined,
+  newValue: r.new_value ?? undefined,
+  reason: r.reason ?? undefined,
   createdAt: r.created_at,
 });
 

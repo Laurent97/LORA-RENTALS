@@ -43,7 +43,10 @@ export function Footer() {
           <h3 className="mb-3 font-display text-sm font-bold uppercase tracking-wider text-gold">Contact</h3>
           <ul className="space-y-3 text-sm">
             <li className="flex items-center gap-2"><Phone className="h-4 w-4 text-gold" /> {BRAND.phone}</li>
-            <li className="flex items-center gap-2"><Mail className="h-4 w-4 text-gold" /> {BRAND.email}</li>
+            <li className="flex items-center gap-2"><Mail className="h-4 w-4 text-gold" /> <a href={`mailto:${BRAND.supportEmail}`} className="hover:text-gold">{BRAND.supportEmail}</a></li>
+            <li className="flex items-center gap-2"><Mail className="h-4 w-4 text-gold" /> <a href={`mailto:${BRAND.financeEmail}`} className="hover:text-gold">{BRAND.financeEmail}</a></li>
+            <li className="flex items-center gap-2"><Mail className="h-4 w-4 text-gold" /> <a href={`mailto:${BRAND.adminEmail}`} className="hover:text-gold">{BRAND.adminEmail}</a></li>
+            <li className="flex items-center gap-2"><Phone className="h-4 w-4 text-gold" /> <a href={`https://wa.me/${BRAND.whatsapp}`} target="_blank" rel="noreferrer" className="hover:text-gold">WhatsApp {BRAND.phone}</a></li>
             <li className="flex items-start gap-2"><MapPin className="mt-0.5 h-4 w-4 shrink-0 text-gold" /> {BRAND.address}</li>
           </ul>
         </div>

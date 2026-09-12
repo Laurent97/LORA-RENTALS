@@ -28,6 +28,17 @@ export const EMAIL_EVENTS = [
   "inspection.created",
   "corporate.approved",
   "referral.rewarded",
+  "review.request",
+  "review.published",
+  "review.replied",
+  "review.flagged",
+  "review.hidden",
+  "review.restored",
+  "review.deleted",
+  "review.reply_deleted",
+  "review.reminder",
+  "review.weekly_digest",
+  "review.milestone",
 ] as const;
 export type EmailEvent = (typeof EMAIL_EVENTS)[number];
 
@@ -153,7 +164,9 @@ export async function dispatchEmailEvent(input: TriggerInput): Promise<TriggerRe
       case "booking.completed": {
         const points = Math.floor(b.totalPrice / 1000);
         if (can(customer)) {
-          await push({ to: customer!.email, templateSlug: "booking-completed", data: { ...d, points_earned: points, review_url: url("/dashboard/bookings") }, userId: customer!.id, locale: locale(customer), idempotencyKey: key("booking-completed", "c") });
+          await push({ to: customer!.email, templateSlug: "booking-completed", data: { ...d, points_earned: points, review_url: url(`/dashboard/bookings/${b.id}/review`) }, userId: customer!.id, locale: locale(customer), idempotencyKey: key("booking-completed", "c") });
+          // Review request — the dedicated ask, linked straight to the form.
+          await push({ to: customer!.email, templateSlug: "review-request", data: { customer_name: d.first_name, vehicle_name: d.car_name, booking_ref: d.booking_id, review_url: url(`/dashboard/bookings/${b.id}/review`) }, userId: customer!.id, locale: locale(customer), idempotencyKey: key("review-request", "c") });
           const { data: loy } = await sb.from("loyalty_points").select("points, tier").eq("user_id", b.customerId).maybeSingle();
           const balance = loy?.points ?? points;
           const tier = loy?.tier ?? "Bronze";
@@ -276,6 +289,111 @@ export async function dispatchEmailEvent(input: TriggerInput): Promise<TriggerRe
     if (!isAdmin && actor.id !== row.referrer_id && actor.id !== row.referee_id) return { ok: false, sent, reason: "Forbidden" };
     const { count } = await sb.from("referrals").select("id", { count: "exact", head: true }).eq("referrer_id", row.referrer_id).eq("status", "rewarded");
     if (can(referrer)) await push({ to: referrer!.email, templateSlug: "referral-reward-earned", data: { first_name: first(referrer!.name), friend_name: first(referee?.name), reward_rwf: row.reward_amount ?? 10000, total_referrals: count ?? 1 }, userId: referrer!.id, locale: locale(referrer), idempotencyKey: `referral-reward-earned:${row.id}` });
+    return { ok: true, sent };
+  }
+
+  // ── Reviews ─────────────────────────────────────────────────────────────────
+  if (event.startsWith("review.")) {
+    // Load the review with its parties. For deleted entities the row may be
+    // gone — callers pass the needed fields through meta.
+    const { data: row } = await sb
+      .from("reviews")
+      .select("*, customer:users!customer_id(name), reply:review_replies(*, owner:users!owner_id(name))")
+      .eq("id", id)
+      .maybeSingle();
+    const [customer, owner] = await Promise.all([
+      row ? loadUser(sb, row.customer_id) : (meta.customer_id ? loadUser(sb, String(meta.customer_id)) : null),
+      row?.owner_id ? loadUser(sb, row.owner_id) : (meta.owner_id ? loadUser(sb, String(meta.owner_id)) : null),
+    ]);
+    // request/reminder/digest/milestone key off booking or owner id, not a
+    // review row — they do their own authorization inside the switch.
+    const needsReviewParty = ["review.published", "review.replied", "review.flagged", "review.hidden", "review.restored", "review.deleted", "review.reply_deleted"].includes(event);
+    if (needsReviewParty) {
+      const party = isAdmin || actor.id === "system" || actor.id === row?.customer_id || actor.id === row?.owner_id;
+      if (!party) return { ok: false, sent, reason: "Forbidden" };
+    }
+
+    const vehicleName = row
+      ? await sb.from("vehicles").select("make, model, year").eq("id", row.vehicle_id).maybeSingle().then(({ data: v }) => (v ? `${v.make} ${v.model} ${v.year}` : "vehicle"))
+      : String(meta.vehicle_name ?? "vehicle");
+    const d = {
+      customer_name: first(customer?.name ?? String(meta.customer_name ?? "")),
+      owner_name: first(owner?.name ?? String(meta.owner_name ?? "")),
+      vehicle_name: vehicleName,
+      rating: row?.rating ?? Number(meta.rating ?? 0),
+      review_title: row?.title ?? String(meta.review_title ?? ""),
+      review_excerpt: (row?.comment ?? String(meta.review_excerpt ?? "")).slice(0, 200),
+      reply_excerpt: (row?.reply?.[0]?.comment ?? String(meta.reply_excerpt ?? "")).slice(0, 200),
+      booking_ref: row ? bookingRef(row.booking_id) : String(meta.booking_ref ?? ""),
+      review_url: url(`/cars/${row?.vehicle_id ?? meta.vehicle_id ?? ""}#reviews`),
+      reason: String(meta.reason ?? ""),
+      flag_count: Number(meta.flag_count ?? (Array.isArray(row?.flagged_by) ? row.flagged_by.length : 0)),
+    };
+    const key = (slug: string, who: string) => `${slug}:${id}:${who}`;
+
+    switch (event) {
+      case "review.request": {
+        // id = booking id here; only the customer may trigger it for their own booking.
+        const bundle = await loadBookingBundle(sb, id);
+        if (!bundle) return { ok: false, sent, reason: "Booking not found" };
+        if (!isAdmin && actor.id !== bundle.booking.customerId) return { ok: false, sent, reason: "Forbidden" };
+        if (can(bundle.customer)) {
+          await push({ to: bundle.customer!.email, templateSlug: "review-request", data: { customer_name: first(bundle.customer!.name), vehicle_name: bundle.vehicle ? `${bundle.vehicle.make} ${bundle.vehicle.model} ${bundle.vehicle.year}` : "vehicle", booking_ref: bookingRef(id), review_url: url(`/dashboard/bookings/${id}/review`) }, userId: bundle.customer!.id, locale: locale(bundle.customer), idempotencyKey: `review-request:${id}` });
+        }
+        break;
+      }
+      case "review.published": {
+        if (can(customer)) await push({ to: customer!.email, templateSlug: "review-published-customer", data: d, userId: customer!.id, locale: locale(customer), idempotencyKey: key("review-published-customer", "c") });
+        if (can(owner)) await push({ to: owner!.email, templateSlug: "review-new-owner", data: d, userId: owner!.id, locale: locale(owner), idempotencyKey: key("review-new-owner", "o") });
+        break;
+      }
+      case "review.replied": {
+        if (can(customer)) await push({ to: customer!.email, templateSlug: "review-reply-customer", data: d, userId: customer!.id, locale: locale(customer), idempotencyKey: key("review-reply-customer", "c") });
+        break;
+      }
+      case "review.flagged": {
+        for (const a of await loadAdmins(sb)) await push({ to: a.email, templateSlug: "review-flagged-admin", data: d, userId: a.id, idempotencyKey: key("review-flagged-admin", a.id) });
+        break;
+      }
+      case "review.hidden": {
+        for (const a of await loadAdmins(sb)) await push({ to: a.email, templateSlug: "review-auto-hidden-admin", data: d, userId: a.id, idempotencyKey: key("review-auto-hidden-admin", a.id) });
+        if (can(customer)) await push({ to: customer!.email, templateSlug: "review-hidden-customer", data: d, userId: customer!.id, locale: locale(customer), idempotencyKey: key("review-hidden-customer", "c") });
+        if (can(owner)) await push({ to: owner!.email, templateSlug: "review-hidden-owner", data: d, userId: owner!.id, locale: locale(owner), idempotencyKey: key("review-hidden-owner", "o") });
+        break;
+      }
+      case "review.restored": {
+        if (can(customer)) await push({ to: customer!.email, templateSlug: "review-restored-customer", data: d, userId: customer!.id, locale: locale(customer), idempotencyKey: key("review-restored-customer", "c") });
+        break;
+      }
+      case "review.deleted": {
+        if (can(customer)) await push({ to: customer!.email, templateSlug: "review-deleted-customer", data: d, userId: customer!.id, locale: locale(customer), idempotencyKey: key("review-deleted-customer", "c") });
+        if (can(owner)) await push({ to: owner!.email, templateSlug: "review-deleted-owner", data: d, userId: owner!.id, locale: locale(owner), idempotencyKey: key("review-deleted-owner", "o") });
+        break;
+      }
+      case "review.reply_deleted": {
+        if (can(owner)) await push({ to: owner!.email, templateSlug: "reply-deleted-owner", data: d, userId: owner!.id, locale: locale(owner), idempotencyKey: key("reply-deleted-owner", "o") });
+        break;
+      }
+      case "review.reminder": {
+        const bundle = await loadBookingBundle(sb, id);
+        if (!bundle) return { ok: false, sent, reason: "Booking not found" };
+        if (can(bundle.customer)) await push({ to: bundle.customer!.email, templateSlug: "review-reminder", data: { customer_name: first(bundle.customer!.name), vehicle_name: bundle.vehicle ? `${bundle.vehicle.make} ${bundle.vehicle.model} ${bundle.vehicle.year}` : "vehicle", booking_ref: bookingRef(id), review_url: url(`/dashboard/bookings/${id}/review`) }, userId: bundle.customer!.id, locale: locale(bundle.customer), idempotencyKey: `review-reminder:${id}` });
+        break;
+      }
+      case "review.weekly_digest": {
+        // id = owner id; meta carries period/total_reviews/avg_rating/unreplied.
+        const o = await loadUser(sb, id);
+        if (!o || o.role !== "owner") return { ok: false, sent, reason: "Owner not found" };
+        if (can(o)) await push({ to: o.email, templateSlug: "review-weekly-digest-owner", data: { owner_name: first(o.name), period: String(meta.period ?? "this week"), total_reviews: Number(meta.total_reviews ?? 0), avg_rating: String(meta.avg_rating ?? "—"), unreplied: Number(meta.unreplied ?? 0) }, userId: o.id, locale: locale(o), idempotencyKey: `review-weekly-digest:${id}:${meta.period ?? Date.now() >> 20}` });
+        break;
+      }
+      case "review.milestone": {
+        const o = await loadUser(sb, id);
+        if (!o || o.role !== "owner") return { ok: false, sent, reason: "Owner not found" };
+        if (can(o)) await push({ to: o.email, templateSlug: "review-milestone-owner", data: { owner_name: first(o.name), milestone: String(meta.milestone ?? "Milestone"), total_reviews: Number(meta.total_reviews ?? 0), avg_rating: String(meta.avg_rating ?? "—"), response_rate: Number(meta.response_rate ?? 0) }, userId: o.id, locale: locale(o), idempotencyKey: `review-milestone:${id}:${meta.milestone}` });
+        break;
+      }
+    }
     return { ok: true, sent };
   }
 

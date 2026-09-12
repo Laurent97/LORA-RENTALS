@@ -1,9 +1,10 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
-import { CalendarDays, Download, MapPin, QrCode, XCircle } from "lucide-react";
+import { CalendarDays, Download, MapPin, QrCode, Star, XCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -27,7 +28,7 @@ const GROUPS: Record<string, (b: Booking) => boolean> = {
 };
 
 export default function MyBookingsPage() {
-  const { user, bookings, updateBookingStatus, currency } = useApp();
+  const { user, bookings, reviews, updateBookingStatus, currency } = useApp();
   const vehicles = useVehicles();
   const [tab, setTab] = useState("upcoming");
   const [qrBooking, setQrBooking] = useState<Booking | null>(null);
@@ -115,13 +116,25 @@ export default function MyBookingsPage() {
                           <Button variant="outline" size="sm" onClick={() => toast.success("Receipt downloaded (demo)")}>
                             <Download className="h-3.5 w-3.5" /> Receipt
                           </Button>
+                          {!b.paymentConfirmed && ["requested", "confirmed"].includes(b.status) && (
+                            <Link href={`/dashboard/bookings/${b.id}/pay`} className="inline-flex h-9 items-center justify-center rounded-xl bg-gold px-3 text-xs font-semibold text-navy-900 shadow-sm transition-colors hover:bg-gold-300">
+                              Pay with Mobile Money
+                            </Link>
+                          )}
                           {["requested", "confirmed"].includes(b.status) && (
                             <Button variant="ghost" size="sm" className="text-destructive" onClick={() => cancel(b)}>
                               <XCircle className="h-3.5 w-3.5" /> Cancel
                             </Button>
                           )}
-                          {b.status === "completed" && (
-                            <Badge variant="gold">Leave a review →</Badge>
+                          {b.status === "completed" && !reviews.some((r) => r.bookingId === b.id) && (
+                            <Link href={`/dashboard/bookings/${b.id}/review`}>
+                              <Button variant="gold" size="sm">
+                                <Star className="h-3.5 w-3.5" /> Leave a review
+                              </Button>
+                            </Link>
+                          )}
+                          {b.status === "completed" && reviews.some((r) => r.bookingId === b.id) && (
+                            <Badge variant="success">Reviewed ✓</Badge>
                           )}
                         </div>
                       </CardContent>
