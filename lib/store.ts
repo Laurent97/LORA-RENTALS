@@ -103,7 +103,7 @@ interface AppState {
   pendingProfile: PendingProfile | null;
   /** Verify a 6-digit code (signup confirmation, passwordless login or recovery) */
   verifyOtp: (email: string, token: string, type: OtpType) => Promise<{ ok: true; user: User } | { ok: false; error: string }>;
-  resendOtp: (email: string, type: OtpType) => Promise<{ ok: boolean; error?: string }>;
+  resendOtp: (email: string, type: OtpType) => Promise<{ ok: boolean; error?: string; verifyType?: OtpType }>;
   /** Passwordless: email a login code to an existing account */
   sendLoginCode: (email: string) => Promise<{ ok: boolean; error?: string }>;
   sendPasswordReset: (email: string) => Promise<{ ok: boolean; error?: string }>;
@@ -215,29 +215,17 @@ export const useApp = create<AppState>()(
         const sb = getSupabase();
         const pending: PendingProfile = { name, phone, role };
         if (sb) {
-          const { data, error } = await sb.auth.signUp({
-            email,
-            password,
-            // Available to Supabase auth email templates as {{ .Data.name }} etc.
-            options: { data: { name, phone, role } },
+          // Server creates the auth user and emails the code via Postmark —
+          // Supabase's own mailer is never used and verification is always required.
+          const res = await fetch("/api/auth/otp", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ kind: "signup", email, password, name, phone, role }),
           });
-          if (error) return { status: "error", error: error.message };
-          if (!data.user) return { status: "error", error: "Sign-up failed. Please try again." };
-          // Existing confirmed account re-registering: Supabase returns a user with no identities.
-          if (data.user.identities && data.user.identities.length === 0) {
-            return { status: "error", error: "An account with this email already exists. Sign in instead." };
-          }
+          const json = await res.json().catch(() => ({}));
+          if (!res.ok || !json.ok) return { status: "error", error: json.error ?? "Sign-up failed. Please try again." };
           set({ pendingProfile: pending });
-          if (!data.session) {
-            // Email confirmation required — finish in /verify after the code is entered
-            return { status: "verify", email };
-          }
-          const user = profileFor(data.user.id, email, pending);
-          await sb.from("users").upsert(userToRow(user));
-          set({ user, pendingProfile: null });
-          void get().hydrate();
-          void notifyEmail("user.registered", user.id);
-          return { status: "done", user };
+          return { status: "verify", email };
         }
         // mock fallback
         const user: User = {
@@ -261,27 +249,39 @@ export const useApp = create<AppState>()(
       resendOtp: async (email, type) => {
         const sb = getSupabase();
         if (!sb) return { ok: false, error: "Requires Supabase." };
-        const { error } =
-          type === "signup"
-            ? await sb.auth.resend({ type: "signup", email })
-            : type === "recovery"
-              ? await sb.auth.resetPasswordForEmail(email)
-              : await sb.auth.signInWithOtp({ email, options: { shouldCreateUser: false } });
-        return error ? { ok: false, error: error.message } : { ok: true };
+        const res = await fetch("/api/auth/otp", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ kind: "resend", resendType: type === "email" ? "login" : type, email }),
+        });
+        const json = await res.json().catch(() => ({}));
+        return res.ok && json.ok
+          ? { ok: true, verifyType: json.verifyType as OtpType | undefined }
+          : { ok: false, error: json.error ?? "Could not resend" };
       },
 
       sendLoginCode: async (email) => {
         const sb = getSupabase();
         if (!sb) return { ok: false, error: "Passwordless login requires Supabase." };
-        const { error } = await sb.auth.signInWithOtp({ email, options: { shouldCreateUser: false } });
-        return error ? { ok: false, error: error.message } : { ok: true };
+        const res = await fetch("/api/auth/otp", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ kind: "login", email }),
+        });
+        const json = await res.json().catch(() => ({}));
+        return res.ok && json.ok ? { ok: true } : { ok: false, error: json.error ?? "Could not send code" };
       },
 
       sendPasswordReset: async (email) => {
         const sb = getSupabase();
         if (!sb) return { ok: false, error: "Password reset requires Supabase." };
-        const { error } = await sb.auth.resetPasswordForEmail(email);
-        return error ? { ok: false, error: error.message } : { ok: true };
+        const res = await fetch("/api/auth/otp", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ kind: "recovery", email }),
+        });
+        const json = await res.json().catch(() => ({}));
+        return res.ok && json.ok ? { ok: true } : { ok: false, error: json.error ?? "Could not send reset code" };
       },
 
       updatePassword: async (password) => {

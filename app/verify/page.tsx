@@ -38,6 +38,8 @@ function VerifyForm() {
   const [cooldown, setCooldown] = useState(RESEND_SECONDS);
   const [verified, setVerified] = useState(false);
   const [newPassword, setNewPassword] = useState("");
+  // A resent signup code is a magiclink token — verify it as "email".
+  const [verifyType, setVerifyType] = useState<OtpType>(type);
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -53,7 +55,7 @@ function VerifyForm() {
     if (value.length !== 6 || busy) return;
     setBusy(true);
     setErr("");
-    const res = await verifyOtp(email, value, type);
+    const res = await verifyOtp(email, value, verifyType);
     setBusy(false);
     if (!res.ok) {
       setErr(res.error);
@@ -80,6 +82,7 @@ function VerifyForm() {
     if (cooldown > 0) return;
     const r = await resendOtp(email, type);
     if (r.ok) {
+      if (r.verifyType) setVerifyType(r.verifyType);
       toast.success("New code sent — check your inbox");
       setCooldown(RESEND_SECONDS);
       setCode("");

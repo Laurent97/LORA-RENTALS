@@ -52,25 +52,27 @@ Each template's `sample` data doubles as its type: `TemplateDataFor<"booking-con
 
 ## Authentication + email verification flow
 
-Supabase Auth issues and validates the 6-digit codes (never the app); our templates skin its emails.
+Supabase Auth issues and validates the 6-digit codes, but **every email is sent by Postmark** — `POST /api/auth/otp` calls `admin.generateLink` (which creates the user/token without emailing anything) and delivers the code through our branded `auth-otp-*` templates. Supabase's built-in mailer is never invoked, and verification is enforced regardless of the project's "Confirm email" toggle.
 
 ```
-/register ── signUp(email, pw, {data:{name,phone,role}})
-   │  session returned (confirm off) ──► profile created ──► dashboard
-   └─ no session (confirm on) ──► pendingProfile saved ──► /verify?type=signup
+/register ── POST /api/auth/otp {kind:"signup"} ──► generateLink(signup) creates
+   │        unconfirmed user + Postmark "auth-otp-signup" ──► /verify?type=signup
 /verify ── verifyOtp(email, code, type) ──► profile created from pendingProfile / metadata
    │      ──► referral (?ref=) attached ──► user.registered emails ──► dashboard
-   └─ resend (60s cooldown) · paste / mobile autofill · type=recovery → set new password
+   └─ resend (60s cooldown, 45s server throttle) · type=recovery → set new password
 /login ── signInWithPassword
    │  "Email not confirmed" ──► resend signup code ──► /verify?type=signup
    │  wrong password ──► error (NO mock fallback when Supabase is configured)
-   ├─ "Email me a code" ──► signInWithOtp ──► /verify?type=email
-   └─ "Forgot password?" ──► resetPasswordForEmail ──► /verify?type=recovery ──► updateUser
+   ├─ "Email me a code" ──► /api/auth/otp {kind:"login"} ──► /verify?type=email
+   └─ "Forgot password?" ──► /api/auth/otp {kind:"recovery"} ──► /verify?type=recovery ──► updateUser
 ```
 
 Store: `register()` → `{status:"done"|"verify"|"error"}`, `login()` → `{status:"ok"|"unconfirmed"|"error"}`, plus `verifyOtp`, `resendOtp`, `sendLoginCode`, `sendPasswordReset`, `updatePassword`. Demo-account shortcuts and the mock login only exist when `NEXT_PUBLIC_SUPABASE_URL` is absent.
 
-**Supabase side** (one-time): run `npx tsx scripts/export-supabase-auth-templates.mjs`, then paste `supabase/auth-templates/*.html` into *Authentication → Email Templates*, enable *Confirm email* with a 6-digit / 600s OTP, and point *SMTP* at Postmark (`smtp.postmarkapp.com:587`, user & password = server token). See `supabase/auth-templates/README.md`.
+Notes:
+- Signup resends generate a **magiclink** token (no password needed) — the API returns `verifyType:"email"` and `/verify` switches accordingly.
+- Login/recovery requests for unknown emails return `ok` silently (anti-enumeration).
+- `POST /api/auth/otp` is public but throttled: one code email per address per 45s, plus the global per-recipient rate limit in `sendEmail`.
 
 ## Triggers (wired)
 
