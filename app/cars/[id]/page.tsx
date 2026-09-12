@@ -22,6 +22,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Rating } from "@/components/rating";
 import { RatingBreakdown } from "@/components/reviews/rating-breakdown";
 import { ReviewList } from "@/components/reviews/review-list";
+import { ReviewForm } from "@/components/reviews/review-form";
+import { canCreateReview } from "@/lib/reviews/permissions";
 import { ratingBreakdown } from "@/lib/reviews/analytics";
 import { MapPlaceholder } from "@/components/map-placeholder";
 import { CarCard } from "@/components/car-card";
@@ -39,7 +41,7 @@ export default function CarDetailPage() {
   const users = useAllUsers();
   const allReviews = useReviews();
   const vehicle = vehicles.find((v) => v.id === id);
-  const { favorites, toggleFavorite, currency, user, upsertReviewLocal } = useApp();
+  const { favorites, toggleFavorite, currency, user, bookings, upsertReviewLocal } = useApp();
   const hydrated = useHydrated();
   const [imgIdx, setImgIdx] = useState(0);
 
@@ -59,6 +61,13 @@ export default function CarDetailPage() {
 
   const owner = users.find((u) => u.id === vehicle.ownerId);
   const reviews = allReviews.filter((r) => r.vehicleId === vehicle.id && r.status === "published");
+  const completedBooking = user
+    ? bookings.find((b) => b.customerId === user.id && b.vehicleId === vehicle.id && b.status === "completed")
+    : undefined;
+  const existingReview = completedBooking
+    ? allReviews.find((r) => r.bookingId === completedBooking.id)
+    : undefined;
+  const canReview = canCreateReview(user, completedBooking, existingReview);
   const similar = vehicles.filter(
     (v) => v.id !== vehicle.id && v.status === "available" && (v.type === vehicle.type || v.location === vehicle.location)
   ).slice(0, 3);
@@ -217,6 +226,28 @@ export default function CarDetailPage() {
             <h2 className="mb-4 font-display text-xl font-bold">
               Reviews {reviews.length > 0 && <span className="text-muted-foreground">({reviews.length})</span>}
             </h2>
+            {canReview && completedBooking && (
+              <Card className="mb-5 border-gold/40 bg-gold/5">
+                <CardContent className="p-5">
+                  <h3 className="font-display text-lg font-bold">Share your experience</h3>
+                  <p className="mt-1 mb-5 text-sm text-muted-foreground">Tell other travelers about this car, the owner, and pickup.</p>
+                  <ReviewForm
+                    bookingId={completedBooking.id}
+                    onSubmitted={(review) => upsertReviewLocal(review)}
+                  />
+                </CardContent>
+              </Card>
+            )}
+            {!user && (
+              <p className="mb-4 rounded-xl border border-border bg-secondary/50 p-4 text-sm text-muted-foreground">
+                <Link href={`/login?next=/cars/${vehicle.id}`} className="font-semibold text-navy-700 underline dark:text-gold">Sign in</Link> to write a review after completing a rental.
+              </p>
+            )}
+            {user && !canReview && !existingReview && (
+              <p className="mb-4 rounded-xl border border-border bg-secondary/50 p-4 text-sm text-muted-foreground">
+                Reviews are available after you complete a rental of this car. You can leave one from <Link href="/dashboard/bookings" className="font-semibold text-navy-700 underline dark:text-gold">My bookings</Link>.
+              </p>
+            )}
             {reviews.length === 0 ? (
               <p className="text-sm text-muted-foreground">No reviews yet — be the first to rent this car.</p>
             ) : (
