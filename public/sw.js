@@ -1,5 +1,5 @@
 // LORA RENTALS — service worker: offline shell + asset caching
-const CACHE = "lora-v1";
+const CACHE = "lora-v2";
 const SHELL = ["/", "/offline", "/icon.svg", "/manifest.json"];
 
 self.addEventListener("install", (e) => {
