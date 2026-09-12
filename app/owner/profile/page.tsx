@@ -75,7 +75,7 @@ export default function OwnerProfilePage() {
     const extension = file.name.split(".").pop()?.toLowerCase() ?? "file";
     const path = `kyc/${user.id}/${type}-${Date.now()}.${extension}`;
     const upload = await sb.storage.from("lorarentals").upload(path, file, { contentType: file.type, upsert: false });
-    if (upload.error) { setUploading(null); return toast.error("Could not upload document"); }
+    if (upload.error) { setUploading(null); console.error(upload.error); return toast.error(`Could not upload document: ${upload.error.message}`); }
     const { data: publicFile } = sb.storage.from("lorarentals").getPublicUrl(path);
     const { data: row, error } = await sb.from("kyc_documents").insert({ user_id: user.id, type, url: publicFile.publicUrl, status: "pending" }).select("id, type, url, status, created_at").single();
     if (error || !row) { setUploading(null); return toast.error("Document uploaded but could not be submitted"); }
