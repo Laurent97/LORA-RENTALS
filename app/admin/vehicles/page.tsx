@@ -22,6 +22,7 @@ const STATUS_VARIANT: Record<VehicleStatus, "success" | "secondary" | "warning" 
 
 export default function AdminVehiclesPage() {
   const currency = useApp((s) => s.currency);
+  const updateVehicleStatus = useApp((s) => s.updateVehicleStatus);
   const [filter, setFilter] = useState<VehicleStatus | "">("");
 
   const vehicles = useVehicles();
@@ -64,10 +65,24 @@ export default function AdminVehiclesPage() {
                 </div>
                 <p className="shrink-0 font-display font-bold">{formatMoney(v.pricePerDay, currency)}/day</p>
                 <div className="shrink-0 flex gap-2">
-                  <Button variant="gold" size="sm" onClick={() => toast.success(`${v.make} ${v.model} approved & live`)}>
+                  <Button
+                    variant="gold"
+                    size="sm"
+                    onClick={() => {
+                      updateVehicleStatus(v.id, "available");
+                      toast.success(`${v.make} ${v.model} approved & live`);
+                    }}
+                  >
                     <Check className="h-3.5 w-3.5" /> Approve
                   </Button>
-                  <Button variant="outline" size="sm" onClick={() => toast.success("Listing rejected — owner notified")}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      updateVehicleStatus(v.id, "unavailable");
+                      toast.success("Listing rejected — owner notified");
+                    }}
+                  >
                     <X className="h-3.5 w-3.5" /> Reject
                   </Button>
                 </div>
