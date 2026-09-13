@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { CurrencyToggle } from "@/components/currency-toggle";
 import { LanguageSwitcher } from "@/components/language-switcher";
+import { PWAInstallButton } from "@/components/pwa/PWAInstallButton";
 import { useApp } from "@/lib/store";
 import { cn, initials } from "@/lib/utils";
 
@@ -57,6 +58,7 @@ export function Header() {
           </div>
           <LanguageSwitcher />
           <ThemeToggle />
+          <PWAInstallButton />
           {user ? (
             <div className="flex items-center gap-2">
               <Link href={DASHBOARD_HREF[user.role]}>
@@ -123,6 +125,9 @@ export function Header() {
                 </Link>
               </>
             )}
+            <div className="mt-3 px-3">
+              <PWAInstallButton className="w-full justify-center" />
+            </div>
             <div className="mt-2 px-3">
               <CurrencyToggle />
             </div>

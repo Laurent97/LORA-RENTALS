@@ -9,20 +9,251 @@ import { usePWAInstall } from "@/lib/pwa/usePWAInstall";
 import { PushNotificationPrompt } from "./PushNotificationPrompt";
 
 export function PWAProvider({ children }: { children: React.ReactNode }) {
-  const device = useDeviceType(); const { state, promptInstall } = usePWAInstall();
-  const [engaged, setEngaged] = useState(false), [visible, setVisible] = useState(false), [success, setSuccess] = useState(false);
-  useEffect(() => { const timer = window.setTimeout(() => setEngaged(true), 20000); const scroll = () => { const max = document.documentElement.scrollHeight - innerHeight; if (max > 0 && scrollY / max >= .5) setEngaged(true); }; addEventListener("scroll", scroll, { passive: true }); return () => { clearTimeout(timer); removeEventListener("scroll", scroll); }; }, []);
-  useEffect(() => { if (device.isStandalone) { markInstalled(); trackPWA("pwa_first_launch", { device_type: device.type, os: device.os }); return; } const connection = navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }; if (!engaged || state === "idle" || state === "unsupported" || device.isWebView || connection.connection?.saveData || connection.connection?.effectiveType === "slow-2g" || !shouldShowPrompt()) return; if (device.type === "desktop" && state === "available" && (device.browser === "chrome" || device.browser === "edge")) setVisible(true); if (device.type !== "desktop" && (state === "available" || state === "ios-manual" || state === "ios-browser")) setVisible(true); }, [device, engaged, state]);
-  useEffect(() => { if (visible) trackPWA("pwa_install_prompt_shown", { device_type: device.type, os: device.os, browser: device.browser }); }, [visible, device]);
-  const close = () => { markDismissed(device.type === "desktop"); trackPWA("pwa_install_dismissed", { device_type: device.type, os: device.os }); setVisible(false); };
-  const install = async () => { const outcome = await promptInstall(); if (outcome === "accepted") { markInstalled(); trackPWA("pwa_install_accepted", { device_type: device.type, os: device.os }); setVisible(false); setSuccess(true); window.setTimeout(() => setSuccess(false), 6000); } else if (outcome === "dismissed") close(); };
+  const device = useDeviceType();
+  const { state, promptInstall } = usePWAInstall();
+  const [engaged, setEngaged] = useState(false);
+  const [visible, setVisible] = useState(false);
+  const [success, setSuccess] = useState(false);
+
+  // Engagement triggers: 20s on site or 50% scroll
+  useEffect(() => {
+    const start = Date.now();
+    const timer = window.setTimeout(() => setEngaged(true), 20000);
+    const onScroll = () => {
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      if (max > 0 && window.scrollY / max >= 0.5) setEngaged(true);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("scroll", onScroll);
+    };
+  }, []);
+
+  // Listen for manual install request (e.g. from a header button)
+  useEffect(() => {
+    const onRequest = () => setVisible(true);
+    window.addEventListener("lora:request-install", onRequest);
+    return () => window.removeEventListener("lora:request-install", onRequest);
+  }, []);
+
+  // Auto-show prompt after engagement when install is available
+  useEffect(() => {
+    if (device.isStandalone) {
+      markInstalled();
+      trackPWA("pwa_first_launch", { device_type: device.type, os: device.os });
+      return;
+    }
+    const connection = navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } };
+    if (
+      !engaged ||
+      state === "idle" ||
+      state === "unsupported" ||
+      device.isWebView ||
+      connection.connection?.saveData ||
+      connection.connection?.effectiveType === "slow-2g" ||
+      !shouldShowPrompt()
+    ) {
+      return;
+    }
+    const isEligibleDesktop = device.type === "desktop" && state === "available" && (device.browser === "chrome" || device.browser === "edge");
+    const isEligibleMobile = device.type !== "desktop" && (state === "available" || state === "ios-manual" || state === "ios-browser");
+    if (isEligibleDesktop || isEligibleMobile) {
+      setVisible(true);
+    }
+  }, [device, engaged, state]);
+
+  // Track prompt shown
+  useEffect(() => {
+    if (visible) {
+      trackPWA("pwa_install_prompt_shown", {
+        device_type: device.type,
+        os: device.os,
+        browser: device.browser,
+      });
+    }
+  }, [visible, device]);
+
+  const close = () => {
+    markDismissed(device.type === "desktop");
+    trackPWA("pwa_install_dismissed", { device_type: device.type, os: device.os });
+    setVisible(false);
+  };
+
+  const install = async () => {
+    const outcome = await promptInstall();
+    if (outcome === "accepted") {
+      markInstalled();
+      trackPWA("pwa_install_accepted", { device_type: device.type, os: device.os });
+      setVisible(false);
+      setSuccess(true);
+      window.setTimeout(() => setSuccess(false), 6000);
+    } else if (outcome === "dismissed") {
+      close();
+    }
+  };
+
   const ios = state === "ios-manual" || state === "ios-browser";
-  return <>{children}<AnimatePresence>{visible && (device.type === "desktop" ? <Desktop onInstall={install} onClose={close} /> : ios ? <IOSGuide browserOnly={state === "ios-browser"} onClose={close} /> : <MobileSheet onInstall={install} onClose={close} />)}</AnimatePresence><AnimatePresence>{success && <Success />}</AnimatePresence>{device.isStandalone && <PushNotificationPrompt />}</>;
+
+  return (
+    <>
+      {children}
+      <AnimatePresence>
+        {visible &&
+          (device.type === "desktop" ? (
+            <Desktop onInstall={install} onClose={close} />
+          ) : ios ? (
+            <IOSGuide browserOnly={state === "ios-browser"} onClose={close} />
+          ) : (
+            <MobileSheet onInstall={install} onClose={close} />
+          ))}
+      </AnimatePresence>
+      <AnimatePresence>{success && <Success />}</AnimatePresence>
+      {device.isStandalone && <PushNotificationPrompt />}
+    </>
+  );
 }
 
-function MobileSheet({ onInstall, onClose }: { onInstall: () => void; onClose: () => void }) { return <motion.section initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} drag="y" dragConstraints={{ top: 0, bottom: 0 }} onDragEnd={(_, i) => i.offset.y > 90 && onClose()} className="fixed inset-x-0 bottom-0 z-[70] rounded-t-[2rem] bg-[#0A1F44] p-6 pb-9 text-white shadow-2xl"><button onClick={onClose} className="absolute right-4 top-4 p-2 text-slate-300" aria-label="Dismiss install prompt"><X /></button><BrandIcon /><h2 className="mt-4 text-center font-display text-2xl font-bold">Get the LORA app</h2><p className="mt-1 text-center text-sm text-slate-300">Book faster. Works offline. No app store needed.</p><ul className="my-6 space-y-2 text-sm text-slate-200">{["Book cars in 60 seconds", "Pickup reminders", "Works offline in Rwanda", "Zero booking fees"].map(x => <li key={x}>✦ <span className="ml-2">{x}</span></li>)}</ul><button onClick={onInstall} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#D4AF37] py-4 font-bold text-[#0A1F44]"><Download size={18}/> Install LORA</button><button onClick={onClose} className="mt-3 w-full text-sm text-slate-300">Not now</button></motion.section>; }
-function IOSGuide({ browserOnly, onClose }: { browserOnly: boolean; onClose: () => void }) { return <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[70] flex items-end bg-black/70 p-0 backdrop-blur-sm sm:items-center sm:justify-center sm:p-5"><motion.section initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} className="relative w-full rounded-t-[2rem] bg-white p-6 pb-8 text-[#0A1F44] sm:max-w-md sm:rounded-[2rem]"><button onClick={onClose} className="absolute right-4 top-4 p-2 text-slate-400" aria-label="Close"><X/></button><BrandIcon /><h2 className="mt-4 text-center font-display text-2xl font-bold">{browserOnly ? "Open LORA in Safari" : "Install LORA on your iPhone"}</h2><p className="mt-2 text-center text-sm text-slate-500">{browserOnly ? "Safari is required to add LORA to your home screen." : "Get the full app experience — no App Store needed."}</p>{!browserOnly && <div className="mt-6 space-y-3"><Step n="1" icon={<Share size={18}/>} title="Tap the Share button" text="Look for the share icon at the bottom of Safari."/><Step n="2" icon={<PlusSquare size={18}/>} title="Add to Home Screen" text="Scroll the menu and select this option."/><Step n="3" icon={<CheckCircle2 size={18}/>} title="Tap Add" text="LORA will appear on your home screen."/></div>}<button onClick={onClose} className="mt-6 w-full rounded-xl bg-[#D4AF37] py-4 font-bold">{browserOnly ? "Got it" : "Got it — I’ll install it"}</button></motion.section></motion.div>; }
-function Step({ n, icon, title, text }: { n: string; icon: React.ReactNode; title: string; text: string }) { return <div className="flex gap-3 rounded-2xl bg-slate-50 p-3"><span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#D4AF37] font-bold">{n}</span><div><p className="flex items-center gap-2 text-sm font-bold">{icon}{title}</p><p className="mt-1 text-xs text-slate-500">{text}</p></div></div>; }
-function Desktop({ onInstall, onClose }: { onInstall: () => void; onClose: () => void }) { return <motion.aside initial={{ opacity: 0, x: 80 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 80 }} className="fixed right-6 top-24 z-[70] w-80 rounded-2xl bg-white p-4 text-[#0A1F44] shadow-2xl"><button onClick={onClose} className="absolute right-3 top-3 text-slate-400" aria-label="Close"><X size={16}/></button><div className="flex gap-3"><BrandIcon small/><div><p className="font-bold">Install LORA Desktop App</p><p className="mt-1 text-xs text-slate-500">Faster access, works offline.</p><button onClick={onInstall} className="mt-3 rounded-lg bg-[#0A1F44] px-4 py-2 text-sm font-bold text-white"><Download className="mr-1 inline" size={14}/> Install</button></div></div></motion.aside>; }
-function BrandIcon({ small = false }: { small?: boolean }) { return <div className={`${small ? "h-10 w-10" : "mx-auto h-16 w-16"} flex items-center justify-center rounded-2xl bg-[#0A1F44] ring-2 ring-[#D4AF37]/50`}><img src="/icons/icon-96x96.png" alt="LORA" className={small ? "h-8 w-8" : "h-12 w-12"}/></div>; }
-function Success() { return <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="fixed right-5 top-5 z-[80] flex items-center gap-3 rounded-xl bg-[#0A1F44] p-4 text-white shadow-xl"><CheckCircle2 className="text-[#D4AF37]"/><span><b>LORA is installed!</b><br/><small>Open it from your home screen.</small></span></motion.div>; }
+function MobileSheet({ onInstall, onClose }: { onInstall: () => void; onClose: () => void }) {
+  return (
+    <motion.section
+      initial={{ y: "100%" }}
+      animate={{ y: 0 }}
+      exit={{ y: "100%" }}
+      drag="y"
+      dragConstraints={{ top: 0, bottom: 0 }}
+      onDragEnd={(_, i) => i.offset.y > 90 && onClose()}
+      className="fixed inset-x-0 bottom-0 z-[70] rounded-t-[2rem] bg-[#0A1F44] p-6 pb-9 text-white shadow-2xl"
+    >
+      <button onClick={onClose} className="absolute right-4 top-4 p-2 text-slate-300" aria-label="Dismiss install prompt">
+        <X />
+      </button>
+      <BrandIcon />
+      <h2 className="mt-4 text-center font-display text-2xl font-bold">Get the LORA app</h2>
+      <p className="mt-1 text-center text-sm text-slate-300">Book faster. Works offline. No app store needed.</p>
+      <ul className="my-6 space-y-2 text-sm text-slate-200">
+        {["Book cars in 60 seconds", "Pickup reminders", "Works offline in Rwanda", "Zero booking fees"].map((x) => (
+          <li key={x}>✦ <span className="ml-2">{x}</span></li>
+        ))}
+      </ul>
+      <button
+        onClick={onInstall}
+        className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#D4AF37] py-4 font-bold text-[#0A1F44]"
+      >
+        <Download size={18} /> Install LORA
+      </button>
+      <button onClick={onClose} className="mt-3 w-full text-sm text-slate-300">
+        Not now
+      </button>
+    </motion.section>
+  );
+}
+
+function IOSGuide({ browserOnly, onClose }: { browserOnly: boolean; onClose: () => void }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[70] flex items-end bg-black/70 p-0 backdrop-blur-sm sm:items-center sm:justify-center sm:p-5"
+    >
+      <motion.section
+        initial={{ y: "100%" }}
+        animate={{ y: 0 }}
+        exit={{ y: "100%" }}
+        className="relative w-full rounded-t-[2rem] bg-white p-6 pb-8 text-[#0A1F44] sm:max-w-md sm:rounded-[2rem]"
+      >
+        <button onClick={onClose} className="absolute right-4 top-4 p-2 text-slate-400" aria-label="Close">
+          <X />
+        </button>
+        <BrandIcon />
+        <h2 className="mt-4 text-center font-display text-2xl font-bold">
+          {browserOnly ? "Open LORA in Safari" : "Install LORA on your iPhone"}
+        </h2>
+        <p className="mt-2 text-center text-sm text-slate-500">
+          {browserOnly
+            ? "Safari is required to add LORA to your home screen."
+            : "Get the full app experience — no App Store needed."}
+        </p>
+        {!browserOnly && (
+          <div className="mt-6 space-y-3">
+            <Step n="1" icon={<Share size={18} />} title="Tap the Share button" text="Look for the share icon at the bottom of Safari." />
+            <Step n="2" icon={<PlusSquare size={18} />} title="Add to Home Screen" text="Scroll the menu and select this option." />
+            <Step n="3" icon={<CheckCircle2 size={18} />} title="Tap Add" text="LORA will appear on your home screen." />
+          </div>
+        )}
+        <button onClick={onClose} className="mt-6 w-full rounded-xl bg-[#D4AF37] py-4 font-bold">
+          {browserOnly ? "Got it" : "Got it — I’ll install it"}
+        </button>
+      </motion.section>
+    </motion.div>
+  );
+}
+
+function Step({ n, icon, title, text }: { n: string; icon: React.ReactNode; title: string; text: string }) {
+  return (
+    <div className="flex gap-3 rounded-2xl bg-slate-50 p-3">
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#D4AF37] font-bold">{n}</span>
+      <div>
+        <p className="flex items-center gap-2 text-sm font-bold">{icon}{title}</p>
+        <p className="mt-1 text-xs text-slate-500">{text}</p>
+      </div>
+    </div>
+  );
+}
+
+function Desktop({ onInstall, onClose }: { onInstall: () => void; onClose: () => void }) {
+  return (
+    <motion.aside
+      initial={{ opacity: 0, x: 80 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: 80 }}
+      className="fixed right-6 top-24 z-[70] w-80 rounded-2xl bg-white p-4 text-[#0A1F44] shadow-2xl"
+    >
+      <button onClick={onClose} className="absolute right-3 top-3 text-slate-400" aria-label="Close">
+        <X size={16} />
+      </button>
+      <div className="flex gap-3">
+        <BrandIcon small />
+        <div>
+          <p className="font-bold">Install LORA Desktop App</p>
+          <p className="mt-1 text-xs text-slate-500">Faster access, works offline.</p>
+          <button
+            onClick={onInstall}
+            className="mt-3 rounded-lg bg-[#0A1F44] px-4 py-2 text-sm font-bold text-white"
+          >
+            <Download className="mr-1 inline" size={14} /> Install
+          </button>
+        </div>
+      </div>
+    </motion.aside>
+  );
+}
+
+function BrandIcon({ small = false }: { small?: boolean }) {
+  return (
+    <div
+      className={`${small ? "h-10 w-10" : "mx-auto h-16 w-16"} flex items-center justify-center rounded-2xl bg-[#0A1F44] ring-2 ring-[#D4AF37]/50`}
+    >
+      <img src="/icons/icon-96x96.png" alt="LORA" className={small ? "h-8 w-8" : "h-12 w-12"} />
+    </div>
+  );
+}
+
+function Success() {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0 }}
+      className="fixed right-5 top-5 z-[80] flex items-center gap-3 rounded-xl bg-[#0A1F44] p-4 text-white shadow-xl"
+    >
+      <CheckCircle2 className="text-[#D4AF37]" />
+      <span>
+        <b>LORA is installed!</b>
+        <br />
+        <small>Open it from your home screen.</small>
+      </span>
+    </motion.div>
+  );
+}
