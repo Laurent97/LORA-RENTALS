@@ -13,6 +13,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LogoMark } from "@/components/layout/logo";
+import { WhatsAppInput } from "@/components/whatsapp/WhatsAppInput";
 import { useApp } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import type { Referral, UserRole } from "@/types";
@@ -35,6 +36,7 @@ function RegisterForm() {
   const [role, setRole] = useState<UserRole>(
     params.get("role") === "owner" ? "owner" : "customer"
   );
+  const [whatsapp, setWhatsapp] = useState("");
   const [loading, setLoading] = useState(false);
   const { register, handleSubmit, formState: { errors } } = useForm<Form>({
     resolver: zodResolver(schema),
@@ -59,7 +61,7 @@ function RegisterForm() {
 
   const onSubmit = async (data: Form) => {
     setLoading(true);
-    const res = await registerUser(data.name, data.email, data.phone, data.password, role);
+    const res = await registerUser(data.name, data.email, data.phone, data.password, role, role === "owner" ? whatsapp : undefined);
     setLoading(false);
 
     if (res.status === "error") {
@@ -132,6 +134,13 @@ function RegisterForm() {
               <Input id="phone" placeholder="+250 788 000 000" {...register("phone")} />
               {errors.phone && <p className="mt-1 text-xs text-destructive">{errors.phone.message}</p>}
             </div>
+            {role === "owner" && (
+              <WhatsAppInput
+                value={whatsapp}
+                onChange={setWhatsapp}
+                onVerifiedChange={(valid, normalized) => { if (valid && normalized) setWhatsapp(normalized); }}
+              />
+            )}
             <div>
               <Label htmlFor="password" className="mb-1.5 block">Password</Label>
               <Input id="password" type="password" autoComplete="new-password" placeholder="••••••••" {...register("password")} />

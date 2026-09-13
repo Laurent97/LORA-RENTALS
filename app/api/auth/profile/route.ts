@@ -5,6 +5,7 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 const schema = z.object({
   name: z.string().trim().min(1).max(120),
   phone: z.string().max(40).default(""),
+  whatsappNumber: z.string().max(40).optional(),
   role: z.enum(["customer", "owner"]).default("customer"),
 });
 
@@ -25,6 +26,7 @@ export async function POST(request: Request) {
     name: parsed.data.name || String(metadata.name ?? authData.user.email?.split("@")[0] ?? "Customer"),
     email: authData.user.email ?? "",
     phone: parsed.data.phone || String(metadata.phone ?? ""),
+    whatsapp_number: parsed.data.whatsappNumber,
     kyc_status: "none",
   };
   const { error } = await sb.from("users").upsert(profile, { onConflict: "id" });

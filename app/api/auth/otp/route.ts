@@ -17,6 +17,7 @@ const schema = z.object({
   password: z.string().min(6).optional(),
   name: z.string().max(120).optional(),
   phone: z.string().max(40).optional(),
+  whatsappNumber: z.string().max(40).optional(),
   role: z.enum(["customer", "owner"]).optional(),
 });
 
@@ -67,7 +68,7 @@ export async function POST(req: Request) {
           type: "signup",
           email,
           password: input.password!,
-          options: { data: { name: input.name, phone: input.phone, role: input.role ?? "customer" } },
+          options: { data: { name: input.name, phone: input.phone, whatsapp_number: input.whatsappNumber, role: input.role ?? "customer" } },
         }
       : linkType === "magiclink"
         ? { type: "magiclink", email }

@@ -66,7 +66,13 @@ import {
 
 export type OtpType = "signup" | "email" | "recovery";
 export type VerifyType = OtpType | "magiclink";
-export interface PendingProfile { name: string; phone: string; role: UserRole; refCode?: string }
+export interface PendingProfile {
+  name: string;
+  phone: string;
+  role: UserRole;
+  refCode?: string;
+  whatsappNumber?: string;
+}
 export type RegisterResult =
   | { status: "done"; user: User }
   | { status: "verify"; email: string }
@@ -83,6 +89,9 @@ const profileFor = (id: string, email: string, p: PendingProfile): User => ({
   name: p.name,
   email,
   phone: p.phone,
+  whatsappNumber: p.whatsappNumber,
+  whatsappVerified: false,
+  whatsappOptIn: true,
   kycStatus: "pending",
   referralCode: `LORA-${id.slice(0, 5).toUpperCase()}`,
   createdAt: new Date().toISOString(),
@@ -99,7 +108,8 @@ interface AppState {
     email: string,
     phone: string,
     password: string,
-    role: UserRole
+    role: UserRole,
+    whatsappNumber?: string
   ) => Promise<RegisterResult>;
   /** Profile captured at signup, finalised after the email code is verified */
   pendingProfile: PendingProfile | null;
@@ -233,16 +243,16 @@ export const useApp = create<AppState>()(
 
       pendingProfile: null,
 
-      register: async (name, email, phone, password, role) => {
+      register: async (name, email, phone, password, role, whatsappNumber) => {
         const sb = getSupabase();
-        const pending: PendingProfile = { name, phone, role };
+        const pending: PendingProfile = { name, phone, role, whatsappNumber };
         if (sb) {
           // Server creates the auth user and emails the code via Postmark —
           // Supabase's own mailer is never used and verification is always required.
           const res = await fetch("/api/auth/otp", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ kind: "signup", email, password, name, phone, role }),
+            body: JSON.stringify({ kind: "signup", email, password, name, phone, role, whatsappNumber }),
           });
           const json = await res.json().catch(() => ({}));
           if (!res.ok || !json.ok) return { status: "error", error: json.error ?? "Sign-up failed. Please try again." };
@@ -344,6 +354,7 @@ export const useApp = create<AppState>()(
         const pending: PendingProfile = get().pendingProfile ?? {
           name: String(meta.name ?? email.split("@")[0]),
           phone: String(meta.phone ?? ""),
+          whatsappNumber: String(meta.whatsapp_number ?? ""),
           role: meta.role === "owner" ? "owner" : "customer",
         };
         const user = profileFor(id, email, pending);
@@ -352,7 +363,12 @@ export const useApp = create<AppState>()(
         const response = await fetch("/api/auth/profile", {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
-          body: JSON.stringify({ name: user.name, phone: user.phone, role: user.role }),
+          body: JSON.stringify({
+            name: user.name,
+            phone: user.phone,
+            role: user.role,
+            whatsappNumber: user.whatsappNumber,
+          }),
         });
         if (!response.ok) {
           console.warn("profile create failed:", await response.text().catch(() => ""));

@@ -23,6 +23,9 @@ export interface User {
   name: string;
   email: string;
   phone: string; // +250 ...
+  whatsappNumber?: string;
+  whatsappVerified?: boolean;
+  whatsappOptIn?: boolean;
   avatar?: string;
   kycStatus: KycStatus;
   createdAt: string;
@@ -38,6 +41,17 @@ export interface User {
   preferredLocale?: Locale;
   suspendedAt?: string;
   deletedAt?: string;
+}
+
+export interface WhatsAppTap {
+  id: string;
+  carId?: string;
+  ownerId?: string;
+  customerId?: string;
+  source: string;
+  userAgent?: string;
+  ipAddress?: string;
+  createdAt: string;
 }
 
 export interface Vehicle {

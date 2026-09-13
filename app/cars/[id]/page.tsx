@@ -30,6 +30,7 @@ import { CarCard } from "@/components/car-card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AvailabilityCalendar } from "@/components/availability-calendar";
 import { VerifiedBadge } from "@/components/verified-badge";
+import { WhatsAppButton } from "@/components/whatsapp/WhatsAppButton";
 import { useAllUsers, useHydrated, useReviews, useVehicles } from "@/lib/lookup";
 import { useApp } from "@/lib/store";
 import { BRAND } from "@/lib/constants";
@@ -203,15 +204,26 @@ export default function CarDetailPage() {
                     )}
                   </p>
                 </div>
-                <a
-                  href={whatsappLink(BRAND.whatsapp, `Hi! I'm interested in the ${vehicle.make} ${vehicle.model} (${vehicle.plate}) on LORA RENTALS.`)}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  <Button variant="outline" size="sm">
-                    <MessageCircle className="h-4 w-4 text-emerald-500" /> WhatsApp
-                  </Button>
-                </a>
+                {owner.whatsappNumber && owner.whatsappOptIn ? (
+                  <WhatsAppButton
+                    ownerName={owner.name}
+                    whatsappNumber={owner.whatsappNumber}
+                    carName={`${vehicle.make} ${vehicle.model}`}
+                    carUrl={`https://${BRAND.domain}/cars/${vehicle.id}`}
+                    carId={vehicle.id}
+                    ownerId={owner.id}
+                  />
+                ) : (
+                  <a
+                    href={whatsappLink(BRAND.whatsapp, `Hi! I'm interested in the ${vehicle.make} ${vehicle.model} (${vehicle.plate}) on LORA RENTALS.`)}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <Button variant="outline" size="sm">
+                      <MessageCircle className="h-4 w-4 text-emerald-500" /> WhatsApp
+                    </Button>
+                  </a>
+                )}
               </CardContent>
             </Card>
           )}
