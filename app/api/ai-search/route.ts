@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { addDays, nextSaturday, format } from "date-fns";
+import { callLlm } from "@/lib/ai/complete";
 import { CAR_TYPES, RWANDA_LOCATIONS } from "@/lib/constants";
 import type { ParsedSearch } from "@/types";
 
@@ -74,32 +75,12 @@ function parseRules(q: string): ParsedSearch {
   return out;
 }
 
-// ─── Optional LLM pass (Anthropic) — falls back silently to rules ───────────
+// ─── Optional LLM pass — falls back silently to rules ─────────────────────────
 async function parseLlm(q: string): Promise<ParsedSearch | null> {
-  const key = process.env.ANTHROPIC_API_KEY;
-  if (!key) return null;
+  const prompt = `Extract car-rental search filters from this query as strict JSON with keys: type (sedan|suv|pickup|luxury|minivan|4x4), location (Rwandan place name), days (int), startDate (YYYY-MM-DD), endDate (YYYY-MM-DD), seats (int), maxPrice (int RWF). Today is ${format(new Date(), "yyyy-MM-dd")}. Omit unknown keys. Query: "${q}"`;
   try {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "x-api-key": key,
-        "anthropic-version": "2023-06-01",
-        "content-type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "claude-haiku-4-5-20251001",
-        max_tokens: 300,
-        messages: [
-          {
-            role: "user",
-            content: `Extract car-rental search filters from this query as strict JSON with keys: type (sedan|suv|pickup|luxury|minivan|4x4), location (Rwandan place name), days (int), startDate (YYYY-MM-DD), endDate (YYYY-MM-DD), seats (int), maxPrice (int RWF). Today is ${format(new Date(), "yyyy-MM-dd")}. Omit unknown keys. Query: "${q}"`,
-          },
-        ],
-      }),
-    });
-    if (!res.ok) return null;
-    const data = await res.json();
-    const text = data.content?.[0]?.text ?? "";
+    const text = await callLlm(prompt);
+    if (!text) return null;
     const json = JSON.parse(text.replace(/```json|```/g, "").trim());
     return json as ParsedSearch;
   } catch {

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { addDays, format, nextFriday, nextSaturday } from "date-fns";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { vehicleFromRow } from "@/lib/supabase/mappers";
+import { callLlm } from "@/lib/ai/complete";
 import { VEHICLES } from "@/lib/data";
 import { CAR_TYPES, RWANDA_DESTINATIONS } from "@/lib/constants";
 import type { CarType, ConciergeMessage, ConciergeRecommendation, ConciergeResponse, Vehicle } from "@/types";
@@ -110,10 +111,6 @@ function buildRules(q: string): ConciergeRecommendation {
 }
 
 async function planWithLlm(query: string): Promise<{ message: string; recommendation: ConciergeRecommendation } | null> {
-  const anthropicKey = process.env.ANTHROPIC_API_KEY;
-  const openaiKey = process.env.OPENAI_API_KEY;
-  if (!anthropicKey && !openaiKey) return null;
-
   const today = format(new Date(), "yyyy-MM-dd");
   const prompt = `You are LORA's AI trip concierge for Rwanda. Given the customer request, plan a trip and return ONLY strict JSON with no markdown.
 Schema:
@@ -137,43 +134,8 @@ Today is ${today}.
 Customer request: "${query}"`;
 
   try {
-    let text = "";
-    if (anthropicKey) {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "x-api-key": anthropicKey,
-          "anthropic-version": "2023-06-01",
-          "content-type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "claude-3-5-sonnet-20241022",
-          max_tokens: 800,
-          messages: [{ role: "user", content: prompt }],
-        }),
-      });
-      if (!res.ok) return null;
-      const data = await res.json();
-      text = data.content?.[0]?.text ?? "";
-    } else if (openaiKey) {
-      const res = await fetch("https://api.openai.com/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          authorization: `Bearer ${openaiKey}`,
-          "content-type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "gpt-4o-mini",
-          temperature: 0.3,
-          max_tokens: 800,
-          messages: [{ role: "user", content: prompt }],
-        }),
-      });
-      if (!res.ok) return null;
-      const data = await res.json();
-      text = data.choices?.[0]?.message?.content ?? "";
-    }
-
+    const text = await callLlm(prompt);
+    if (!text) return null;
     const json = JSON.parse(text.replace(/```json|```/g, "").trim());
     const rec = json.recommendation as Partial<ConciergeRecommendation>;
     if (!rec?.carType || !rec?.location) return null;
