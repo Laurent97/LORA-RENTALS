@@ -82,6 +82,7 @@ export default function CarDetailPage() {
             src={vehicle.images[imgIdx]}
             alt={`${vehicle.make} ${vehicle.model}`}
             fill
+            sizes="(max-width: 1024px) 100vw, 67vw"
             priority
             className="object-cover"
           />
@@ -104,7 +105,7 @@ export default function CarDetailPage() {
               )}
             >
               <div className="relative aspect-[16/7]">
-                <Image src={src} alt="" fill className="object-cover" />
+                <Image src={src} alt="" fill sizes="(max-width: 1024px) 0, 33vw" className="object-cover" />
               </div>
             </button>
           ))}
@@ -118,7 +119,7 @@ export default function CarDetailPage() {
             onClick={() => setImgIdx(i)}
             className={cn("relative h-16 w-24 shrink-0 overflow-hidden rounded-lg", imgIdx === i && "ring-2 ring-gold")}
           >
-            <Image src={src} alt="" fill className="object-cover" />
+            <Image src={src} alt="" fill sizes="96px" className="object-cover" />
           </button>
         ))}
       </div>

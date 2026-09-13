@@ -53,6 +53,7 @@ export default function HomePage() {
           src="https://images.unsplash.com/photo-1503376780353-7e6692767b70?f_auto&q_auto&w_2000"
           alt=""
           fill
+          sizes="100vw"
           priority
           className="object-cover opacity-25"
         />
@@ -205,6 +206,7 @@ export default function HomePage() {
               src="https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?f_auto&q_auto&w_1200"
               alt="Car owner handing over keys"
               fill
+              sizes="(max-width: 768px) 0, 40vw"
               className="object-cover"
             />
           </div>

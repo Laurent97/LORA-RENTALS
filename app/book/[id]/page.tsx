@@ -401,7 +401,7 @@ export default function BookingPage() {
             <CardContent className="p-5">
               <div className="flex gap-3">
                 <div className="relative h-16 w-24 shrink-0 overflow-hidden rounded-lg bg-muted">
-                  <Image src={vehicle.images[0]} alt="" fill className="object-cover" />
+                  <Image src={vehicle.images[0]} alt="" fill sizes="96px" className="object-cover" />
                 </div>
                 <div>
                   <p className="font-display text-sm font-bold">{vehicle.make} {vehicle.model}</p>

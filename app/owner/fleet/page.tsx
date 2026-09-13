@@ -145,7 +145,7 @@ export default function FleetPage() {
           {fleet.map((v) => (
             <Card key={v.id} className="overflow-hidden">
               <div className="relative aspect-[16/9] bg-muted">
-                <Image src={v.images[0]} alt="" fill className="object-cover" />
+                <Image src={v.images[0]} alt="" fill sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 33vw" className="object-cover" />
                 <div className="absolute left-3 top-3">
                   <Badge variant={STATUS_VARIANT[v.status]} className="bg-card/90 backdrop-blur capitalize">
                     {v.status.replace("_", " ")}
@@ -252,7 +252,7 @@ export default function FleetPage() {
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                   {images.map((src) => (
                     <div key={src} className="relative aspect-square overflow-hidden rounded-lg bg-muted">
-                      <Image src={src} alt="" fill className="object-cover" />
+                      <Image src={src} alt="" fill sizes="(max-width: 640px) 50vw, 25vw" className="object-cover" />
                     </div>
                   ))}
                 </div>

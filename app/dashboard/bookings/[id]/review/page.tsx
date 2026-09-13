@@ -97,7 +97,7 @@ export default function LeaveReviewPage() {
             <CardContent className="flex items-center gap-4 p-5">
               {vehicle && (
                 <div className="relative h-16 w-24 shrink-0 overflow-hidden rounded-xl bg-muted">
-                  <Image src={vehicle.images[0]} alt="" fill className="object-cover" />
+                  <Image src={vehicle.images[0]} alt="" fill sizes="96px" className="object-cover" />
                 </div>
               )}
               <div>

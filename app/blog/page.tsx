@@ -66,7 +66,7 @@ export default function BlogPage() {
             >
               <div className="relative aspect-[16/9] overflow-hidden">
                 {p.coverImage ? (
-                  <Image src={p.coverImage} alt={p.title} fill className="object-cover transition-transform duration-500 group-hover:scale-105" />
+                  <Image src={p.coverImage} alt={p.title} fill sizes="(max-width: 768px) 100vw, 50vw" className="object-cover transition-transform duration-500 group-hover:scale-105" />
                 ) : (
                   <div className="h-full bg-navy-800" />
                 )}

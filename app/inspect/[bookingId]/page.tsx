@@ -162,7 +162,7 @@ export default function InspectionPage() {
               <div className="mt-4 grid grid-cols-3 gap-2 sm:grid-cols-4">
                 {photos.map((src, i) => (
                   <div key={i} className="group relative aspect-square overflow-hidden rounded-xl border border-border">
-                    <Image src={src} alt={`Inspection photo ${i + 1}`} fill className="object-cover" unoptimized={src.startsWith("data:")} />
+                    <Image src={src} alt={`Inspection photo ${i + 1}`} fill sizes="(max-width: 640px) 33vw, 25vw" className="object-cover" unoptimized={src.startsWith("data:")} />
                     <button
                       onClick={() => setPhotos((p) => p.filter((_, x) => x !== i))}
                       className="absolute right-1.5 top-1.5 rounded-full bg-destructive p-1.5 text-white opacity-0 transition-opacity group-hover:opacity-100"

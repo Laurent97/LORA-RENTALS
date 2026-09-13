@@ -80,7 +80,7 @@ export default function MyBookingsPage() {
                         <div className="flex flex-wrap items-start gap-4">
                           {v && (
                             <div className="relative h-20 w-32 shrink-0 overflow-hidden rounded-xl bg-muted">
-                              <Image src={v.images[0]} alt="" fill className="object-cover" />
+                              <Image src={v.images[0]} alt="" fill sizes="128px" className="object-cover" />
                             </div>
                           )}
                           <div className="min-w-0 flex-1">

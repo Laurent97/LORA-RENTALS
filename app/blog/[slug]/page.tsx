@@ -88,7 +88,7 @@ export default function BlogPostPage() {
 
       {post.coverImage && (
         <div className="relative mt-8 aspect-[16/8] overflow-hidden rounded-2xl">
-          <Image src={post.coverImage} alt={post.title} fill className="object-cover" priority />
+          <Image src={post.coverImage} alt={post.title} fill sizes="100vw" className="object-cover" priority />
         </div>
       )}
 
