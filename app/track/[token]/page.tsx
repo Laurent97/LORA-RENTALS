@@ -19,6 +19,7 @@ type TrackPayload = {
   vehicle: { make: string; model: string; plate: string } | null;
   customerName: string | null;
   location: { lat: number; lng: number; recordedAt: string } | null;
+  alert: { type: string; message: string; lat?: number; lng?: number; createdAt: string } | null;
 };
 
 export default function TrackPage() {
@@ -91,6 +92,16 @@ export default function TrackPage() {
           {data.vehicle ? `${data.vehicle.make} ${data.vehicle.model} · ${data.vehicle.plate}` : "Shared trip"}
         </p>
       </div>
+
+      {data.alert && (
+        <div className="mb-4 rounded-xl border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive">
+          <div className="flex items-center gap-2 font-semibold">
+            <AlertTriangle className="h-4 w-4" /> {data.alert.type.replace("_", " ")}
+          </div>
+          <p className="mt-1">{data.alert.message}</p>
+          <p className="mt-1 text-xs opacity-80">{new Date(data.alert.createdAt).toLocaleString()}</p>
+        </div>
+      )}
 
       <Card>
         <CardContent className="space-y-4 p-5">

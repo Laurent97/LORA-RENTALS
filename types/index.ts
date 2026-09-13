@@ -28,6 +28,7 @@ export interface User {
   whatsappOptIn?: boolean;
   avatar?: string;
   kycStatus: KycStatus;
+  country?: string;
   createdAt: string;
   // owner-specific
   businessName?: string;
@@ -79,6 +80,7 @@ export interface Vehicle {
   tripsCompleted: number;
   paymentMethods: PaymentMethod[];
   airportApproved: boolean;
+  country?: string;
   createdAt: string;
 }
 
@@ -118,6 +120,7 @@ export interface Booking {
   corporateAccountId?: string;
   costCenter?: string;
   poNumber?: string;
+  country?: string;
   createdAt: string;
 }
 
@@ -432,6 +435,371 @@ export interface ConciergeResponse {
   recommendation: ConciergeRecommendation;
   vehicles: Vehicle[];
   source: "llm" | "rules";
+}
+
+export type TrustTier = "bronze" | "silver" | "gold" | "platinum" | "diamond";
+
+export interface TrustScore {
+  userId: string;
+  total: number;
+  kyc: number;
+  response: number;
+  cancellation: number;
+  rating: number;
+  damage: number;
+  punctuality: number;
+  repeatCustomer: number;
+  dispute: number;
+  tier: TrustTier;
+  updatedAt: string;
+}
+
+export interface PricingRules {
+  vehicleId: string;
+  weekendSurchargePct: number;
+  longRental7DiscountPct: number;
+  longRental30DiscountPct: number;
+  lastMinuteDiscountPct: number;
+  earlyBirdDiscountPct: number;
+  earlyBirdDays: number;
+  highDemandBumpPct: number;
+  highDemandDates: string[];
+  enabled: boolean;
+  updatedAt: string;
+}
+
+export interface PricingAdjustment {
+  label: string;
+  amount: number;
+}
+
+export interface PricingEstimate {
+  basePrice: number;
+  days: number;
+  dayRate: number;
+  adjustments: PricingAdjustment[];
+  total: number;
+  marketSuggestion?: string;
+}
+
+export type WalletTransactionType = "topup" | "refund" | "referral" | "promo" | "payment" | "payout";
+export type WalletTransactionStatus = "pending" | "completed" | "cancelled";
+
+export interface WalletTransaction {
+  id: string;
+  userId: string;
+  amount: number;
+  type: WalletTransactionType;
+  bookingId?: string;
+  status: WalletTransactionStatus;
+  method?: string;
+  notes?: string;
+  createdAt: string;
+}
+
+export interface Wallet {
+  userId: string;
+  balance: number;
+  updatedAt: string;
+}
+
+export interface CorporatePolicies {
+  accountId: string;
+  maxDailyRate?: number;
+  requireApproval: boolean;
+  approverEmails: string[];
+  costCenters: string[];
+  bulkBookingEnabled: boolean;
+  updatedAt: string;
+}
+
+export interface CorporateBookingApproval {
+  id: string;
+  bookingId: string;
+  accountId: string;
+  requestedBy: string;
+  status: "pending" | "approved" | "rejected";
+  approverNote?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type LongTermLeaseStatus = "draft" | "pending" | "active" | "paused" | "cancelled" | "completed";
+
+export interface LongTermLease {
+  id: string;
+  vehicleId: string;
+  customerId?: string;
+  ownerId: string;
+  startDate: string;
+  endDate: string;
+  monthlyPrice: number;
+  maintenanceIncluded: boolean;
+  swapAllowed: boolean;
+  autoRenewal: boolean;
+  status: LongTermLeaseStatus;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Driver {
+  id: string;
+  userId: string;
+  bio?: string;
+  languages: string[];
+  licenseVerified: boolean;
+  rating: number;
+  reviewCount: number;
+  createdAt: string;
+}
+
+export interface Tour {
+  id: string;
+  driverId: string;
+  title: string;
+  description?: string;
+  price: number;
+  durationHours: number;
+  languages: string[];
+  itinerary: string[];
+  status: "available" | "unavailable";
+  createdAt: string;
+}
+
+export interface InsuranceAddon {
+  id: string;
+  vehicleId: string;
+  tier: "basic" | "standard" | "premium";
+  dailyPrice: number;
+  liabilityCap: number;
+  deductible: number;
+  coverage: string[];
+  status: "available" | "unavailable";
+  createdAt: string;
+}
+
+export interface RoadsidePlan {
+  id: string;
+  vehicleId: string;
+  providerName: string;
+  dailyPrice: number;
+  services: string[];
+  responseMinutes?: number;
+  status: "available" | "unavailable";
+  createdAt: string;
+}
+
+export interface Badge {
+  id: string;
+  slug: string;
+  label: string;
+  description?: string;
+  icon?: string;
+  pointsBonus: number;
+  createdAt: string;
+}
+
+export interface UserBadge {
+  userId: string;
+  badgeId: string;
+  awardedAt: string;
+}
+
+export interface Challenge {
+  id: string;
+  slug: string;
+  label: string;
+  description?: string;
+  points: number;
+  condition: Record<string, unknown>;
+  startAt?: string;
+  endAt?: string;
+  createdAt: string;
+}
+
+export interface UserChallenge {
+  userId: string;
+  challengeId: string;
+  status: "in_progress" | "completed" | "rewarded";
+  progress: number;
+  completedAt?: string;
+  createdAt: string;
+}
+
+export type ReferralRewardType = "team" | "corporate" | "owner" | "social" | "influencer";
+export type ReferralRewardStatus = "pending" | "credited" | "cancelled";
+
+export interface ReferralReward {
+  id: string;
+  userId: string;
+  referralId: string;
+  rewardType: ReferralRewardType;
+  amount: number;
+  status: ReferralRewardStatus;
+  notes?: string;
+  createdAt: string;
+}
+
+export interface AnalyticsSummary {
+  totalUsers: number;
+  totalOwners: number;
+  totalCustomers: number;
+  totalVehicles: number;
+  availableVehicles: number;
+  pendingApprovalVehicles: number;
+  totalBookings: number;
+  completedBookings: number;
+  cancelledBookings: number;
+  totalRevenue: number;
+  topLocations: { location: string; count: number }[];
+  topVehicles: { id: string; make: string; model: string; trips: number; revenue: number }[];
+  recentSignups: { month: string; count: number }[];
+}
+
+export interface CountrySetting {
+  country: string;
+  name: string;
+  currency: string;
+  phonePrefix: string;
+  vatRate: number;
+  bookingFee: number;
+  paymentRails: string[];
+  updatedAt: string;
+}
+
+export interface ApiKey {
+  id: string;
+  userId: string;
+  name: string;
+  key: string;
+  scopes: string[];
+  lastUsed?: string;
+  createdAt: string;
+}
+
+export interface WhatsAppTemplate {
+  id: string;
+  slug: string;
+  label: string;
+  language: string;
+  category: "transactional" | "marketing" | "utility" | "authentication";
+  body: string;
+  variables: string[];
+  status: "draft" | "approved" | "rejected";
+  createdAt: string;
+}
+
+export interface WhatsAppConversation {
+  id: string;
+  userId: string;
+  phone: string;
+  direction: "inbound" | "outbound";
+  templateSlug?: string;
+  body: string;
+  messageId?: string;
+  status: "sent" | "delivered" | "read" | "failed";
+  createdAt: string;
+}
+
+export interface EVVehicle {
+  vehicleId: string;
+  batteryCapacityKwh?: number;
+  rangeKm?: number;
+  chargeType: string[];
+  greenRebatePct: number;
+  co2SavedKg: number;
+  energyCostPerKm?: number;
+  createdAt: string;
+}
+
+export interface ChargingStation {
+  id: string;
+  name: string;
+  location: string;
+  lat?: number;
+  lng?: number;
+  connectorTypes: string[];
+  powerKw?: number;
+  available: boolean;
+  createdAt: string;
+}
+
+export interface CarSharingCircle {
+  id: string;
+  name: string;
+  ownerId: string;
+  location: string;
+  rules?: string;
+  status: "active" | "paused" | "archived";
+  createdAt: string;
+}
+
+export interface CarSharingRequest {
+  id: string;
+  circleId: string;
+  requesterId: string;
+  startAt: string;
+  endAt: string;
+  status: "pending" | "approved" | "rejected" | "completed" | "cancelled";
+  createdAt: string;
+}
+
+export interface VideoKycSession {
+  id: string;
+  userId: string;
+  status: "pending" | "submitted" | "approved" | "rejected";
+  recordingUrl?: string;
+  selfieUrl?: string;
+  documentFrontUrl?: string;
+  documentBackUrl?: string;
+  livenessScore?: number;
+  reviewerNotes?: string;
+  submittedAt?: string;
+  reviewedAt?: string;
+  createdAt: string;
+}
+
+export interface RewardCatalogItem {
+  id: string;
+  slug: string;
+  label: string;
+  description?: string;
+  partnerName?: string;
+  pointsCost: number;
+  stock?: number;
+  status: "available" | "out_of_stock" | "discontinued";
+  createdAt: string;
+}
+
+export interface UserReward {
+  id: string;
+  userId: string;
+  rewardId: string;
+  status: "pending" | "redeemed" | "cancelled";
+  code?: string;
+  createdAt: string;
+}
+
+export interface VehicleEmission {
+  vehicleId: string;
+  co2GPerKm?: number;
+  fuelConsumptionLPer100km?: number;
+  offsetProgram?: string;
+  verified: boolean;
+  updatedAt: string;
+}
+
+export interface CarbonOffset {
+  id: string;
+  userId: string;
+  bookingId?: string;
+  km: number;
+  co2Kg: number;
+  offsetRwf: number;
+  partner?: string;
+  status: "pending" | "verified" | "rejected";
+  createdAt: string;
 }
 
 export type Locale = "en" | "rw" | "fr";

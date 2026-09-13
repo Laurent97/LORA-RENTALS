@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { notFound, useParams } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   BadgeCheck,
   Banknote,
@@ -31,6 +31,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { AvailabilityCalendar } from "@/components/availability-calendar";
 import { VerifiedBadge } from "@/components/verified-badge";
 import { WhatsAppButton } from "@/components/whatsapp/WhatsAppButton";
+import { TrustGauge } from "@/components/trust/TrustGauge";
 import { useAllUsers, useHydrated, useReviews, useVehicles } from "@/lib/lookup";
 import { useApp } from "@/lib/store";
 import { BRAND } from "@/lib/constants";
@@ -44,7 +45,23 @@ export default function CarDetailPage() {
   const vehicle = vehicles.find((v) => v.id === id);
   const { favorites, toggleFavorite, currency, user, bookings, upsertReviewLocal } = useApp();
   const hydrated = useHydrated();
+  const owner = users.find((u) => u.id === vehicle?.ownerId);
   const [imgIdx, setImgIdx] = useState(0);
+  const [trust, setTrust] = useState<import("@/types").TrustScore | null>(null);
+
+  useEffect(() => {
+    if (!owner?.id) return;
+    fetch("/api/trust", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ userId: owner.id }),
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((s) => {
+        if (s) setTrust(s as import("@/types").TrustScore);
+      })
+      .catch(() => {});
+  }, [owner?.id]);
 
   // While hydrating, the store still holds mock ids — don't 404 yet.
   if (!vehicle) {
@@ -60,7 +77,6 @@ export default function CarDetailPage() {
     return notFound();
   }
 
-  const owner = users.find((u) => u.id === vehicle.ownerId);
   const reviews = allReviews.filter((r) => r.vehicleId === vehicle.id && r.status === "published");
   const completedBooking = user
     ? bookings.find((b) => b.customerId === user.id && b.vehicleId === vehicle.id && b.status === "completed")
@@ -203,6 +219,11 @@ export default function CarDetailPage() {
                       <span className="ml-1 font-semibold text-gold-600 dark:text-gold">⚡ Fast Responder</span>
                     )}
                   </p>
+                  {trust && (
+                    <div className="mt-2">
+                      <TrustGauge score={trust} size={48} />
+                    </div>
+                  )}
                 </div>
                 {owner.whatsappNumber && owner.whatsappOptIn ? (
                   <WhatsAppButton

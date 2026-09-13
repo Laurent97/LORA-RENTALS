@@ -27,13 +27,21 @@ export async function GET(req: Request, { params }: { params: { token: string } 
     return NextResponse.json({ error: "Trip not found" }, { status: 404 });
   }
 
-  const [{ data: vehicle }, { data: customer }, { data: location }] = await Promise.all([
+  const [{ data: vehicle }, { data: customer }, { data: location }, { data: alert }] = await Promise.all([
     sb.from("vehicles").select("*").eq("id", booking.vehicle_id).maybeSingle(),
     sb.from("users").select("name").eq("id", booking.customer_id).maybeSingle(),
     sb
       .from("trip_locations")
       .select("*")
       .eq("booking_id", booking.id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    sb
+      .from("geofence_alerts")
+      .select("*")
+      .eq("booking_id", booking.id)
+      .eq("acknowledged", false)
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle(),
@@ -45,6 +53,9 @@ export async function GET(req: Request, { params }: { params: { token: string } 
     customerName: customer?.name ?? null,
     location: location
       ? { lat: location.lat, lng: location.lng, recordedAt: location.created_at }
+      : null,
+    alert: alert
+      ? { type: alert.type, message: alert.message, lat: alert.lat, lng: alert.lng, createdAt: alert.created_at }
       : null,
   });
 }

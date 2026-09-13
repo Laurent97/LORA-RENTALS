@@ -23,6 +23,26 @@ npm run dev
 # → http://localhost:3000
 ```
 
+## PWA installation
+
+The install experience waits for 20 seconds or 50% page scroll, then shows Android's native install dialog, an iOS Safari Add-to-Home-Screen guide, or a Chrome/Edge desktop card. Dismissals are capped for 7 days, then 30 days, then effectively permanently. Test with Chrome DevTools → Application → Manifest/Service Workers, using a production build or deployed HTTPS site.
+
+Regenerate branded PNG assets after changing the icon artwork:
+
+```bash
+node scripts/gen-icons.mjs
+```
+
+Validate the manifest, generated assets, offline worker, and push handlers with:
+
+```bash
+npm run verify:pwa
+```
+
+Apply `supabase/migrations/202609130002_pwa.sql` to persist install analytics and push subscriptions. Set the VAPID variables in `.env.local`; a server-side sender (using `VAPID_PRIVATE_KEY`) is required to deliver notification payloads to saved subscriptions. Run Lighthouse against the deployed HTTPS URL, because installability and native prompts are unavailable on ordinary HTTP deployments.
+
+To send a booking reminder from a trusted backend, POST `title`, `body`, `url`, and optionally a subscription `endpoint` to `/api/pwa/send`, with `x-push-secret` equal to `PUSH_API_SECRET`. Without an endpoint, the sender broadcasts to every saved subscription; use this only for platform-wide notices.
+
 ### Demo accounts (any password)
 
 | Role     | Email             | Lands on      |

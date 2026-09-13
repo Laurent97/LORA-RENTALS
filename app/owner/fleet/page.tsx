@@ -5,7 +5,7 @@ import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { Car, ImagePlus, Pencil, Plus, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -18,7 +18,7 @@ import { CAR_TYPES, FUEL_TYPES, RWANDA_LOCATIONS, TRANSMISSIONS } from "@/lib/co
 import { useVehicles } from "@/lib/lookup";
 import { useApp } from "@/lib/store";
 import { getSupabase } from "@/lib/supabase/client";
-import { formatMoney } from "@/lib/utils";
+import { cn, formatMoney } from "@/lib/utils";
 import type { CarType, FuelType, Transmission, Vehicle, VehicleStatus } from "@/types";
 
 const STATUS_VARIANT: Record<VehicleStatus, "success" | "secondary" | "warning" | "info"> = {
@@ -166,6 +166,12 @@ export default function FleetPage() {
                   <Button variant="outline" size="sm" className="flex-1" onClick={() => toast.info("Edit form — same as Add vehicle")}>
                     <Pencil className="h-3.5 w-3.5" /> Edit
                   </Button>
+                  <Link
+                    href={`/owner/pricing/${v.id}`}
+                    className={cn(buttonVariants({ variant: "outline", size: "sm" }), "flex-1 text-center")}
+                  >
+                    Pricing
+                  </Link>
                   <Button
                     variant="ghost"
                     size="sm"

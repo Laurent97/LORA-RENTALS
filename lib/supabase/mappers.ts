@@ -45,6 +45,7 @@ export const userFromRow = (r: any): User => ({
   referredBy: r.referred_by ?? undefined,
   preferredCurrency: r.preferred_currency ?? undefined,
   preferredLocale: r.preferred_locale ?? undefined,
+  country: r.country ?? "RW",
   suspendedAt: r.suspended_at ?? undefined,
   deletedAt: r.deleted_at ?? undefined,
 });
@@ -65,6 +66,7 @@ export const userToRow = (u: User) => ({
   referred_by: u.referredBy ?? null,
   preferred_currency: u.preferredCurrency ?? "RWF",
   preferred_locale: u.preferredLocale ?? "en",
+  country: u.country ?? "RW",
 });
 
 export const vehicleFromRow = (r: any): Vehicle => ({
@@ -93,6 +95,7 @@ export const vehicleFromRow = (r: any): Vehicle => ({
   tripsCompleted: r.trips_completed ?? 0,
   paymentMethods: r.payment_methods ?? ["cash", "momo", "card"],
   airportApproved: r.airport_approved ?? false,
+  country: r.country ?? "RW",
   createdAt: r.created_at,
 });
 
@@ -122,6 +125,7 @@ export const vehicleToRow = (v: Vehicle) => ({
   trips_completed: v.tripsCompleted,
   payment_methods: v.paymentMethods,
   airport_approved: v.airportApproved,
+  country: v.country ?? "RW",
 });
 
 export const bookingFromRow = (r: any): Booking => ({
@@ -154,6 +158,7 @@ export const bookingFromRow = (r: any): Booking => ({
   corporateAccountId: r.corporate_account_id ?? undefined,
   costCenter: r.cost_center ?? undefined,
   poNumber: r.po_number ?? undefined,
+  country: r.country ?? "RW",
   createdAt: r.created_at,
 });
 
@@ -187,6 +192,7 @@ export const bookingToRow = (b: Booking) => ({
   corporate_account_id: b.corporateAccountId ?? null,
   cost_center: b.costCenter ?? null,
   po_number: b.poNumber ?? null,
+  country: b.country ?? "RW",
 });
 
 export const replyFromRow = (r: any): ReviewReply => ({
