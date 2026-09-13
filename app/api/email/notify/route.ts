@@ -26,5 +26,14 @@ export async function POST(req: Request) {
   if (!(EMAIL_EVENTS as readonly string[]).includes(event)) return NextResponse.json({ error: `Unknown event: ${event}` }, { status: 400 });
 
   const result = await dispatchEmailEvent({ event: event as EmailEvent, id, actor: { id: caller.id, role: caller.role }, meta });
-  return NextResponse.json(result, { status: result.ok ? 200 : result.reason === "Forbidden" ? 403 : 422 });
+  // Client fire-and-forget calls (no x-email-secret) should not surface 4xx in the browser.
+  // The result body still shows whether the email was actually sent.
+  const status = result.ok
+    ? 200
+    : result.reason === "Forbidden"
+    ? 403
+    : viaSecret
+    ? 422
+    : 200;
+  return NextResponse.json(result, { status });
 }
