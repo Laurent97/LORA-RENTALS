@@ -30,6 +30,16 @@ export async function POST(request: Request) {
     kyc_status: "none",
   };
   const { error } = await sb.from("users").upsert(profile, { onConflict: "id" });
-  if (error) return NextResponse.json({ error: "Could not create your profile." }, { status: 500 });
+  if (error) {
+    console.error("[auth/profile] upsert error:", error);
+    const msg = error.message ?? String(error);
+    if (msg.includes("whatsapp_number")) {
+      return NextResponse.json(
+        { error: "Database migration required: run supabase/migrations/202609140001_whatsapp.sql in your Supabase SQL Editor.", code: "migration_missing" },
+        { status: 400 }
+      );
+    }
+    return NextResponse.json({ error: "Could not create your profile." }, { status: 500 });
+  }
   return NextResponse.json({ ok: true, profile });
 }
