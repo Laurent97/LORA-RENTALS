@@ -2,7 +2,7 @@
 // gold ring + "L" monogram. Pure Node (zlib + hand-rolled PNG chunks), no deps.
 // Run: node scripts/gen-icons.mjs
 import { deflateSync } from "node:zlib";
-import { writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 
 const NAVY = [10, 31, 68];      // #0A1F44
 const GOLD = [212, 175, 55];    // #D4AF37
@@ -31,29 +31,30 @@ function chunk(type, data) {
   return Buffer.concat([len, body, crc]);
 }
 
-function png(size) {
+function png(width, height = width) {
   const ihdr = Buffer.alloc(13);
-  ihdr.writeUInt32BE(size, 0);
-  ihdr.writeUInt32BE(size, 4);
+  ihdr.writeUInt32BE(width, 0);
+  ihdr.writeUInt32BE(height, 4);
   ihdr[8] = 8;  // bit depth
   ihdr[9] = 2;  // truecolor RGB
   // scanlines: filter byte + RGB per pixel
-  const raw = Buffer.alloc(size * (size * 3 + 1));
-  const cx = size / 2, cy = size / 2;
-  const ringR = size * 0.36, ringW = size * 0.05;
-  const barW = size * 0.09, barH = size * 0.34; // "L" stem
-  const footW = size * 0.2, footH = size * 0.09; // "L" foot
-  for (let y = 0; y < size; y++) {
-    const row = y * (size * 3 + 1);
+  const raw = Buffer.alloc(height * (width * 3 + 1));
+  const unit = Math.min(width, height);
+  const cx = width / 2, cy = height / 2;
+  const ringR = unit * 0.36, ringW = unit * 0.05;
+  const barW = unit * 0.09, barH = unit * 0.34; // "L" stem
+  const footW = unit * 0.2, footH = unit * 0.09; // "L" foot
+  for (let y = 0; y < height; y++) {
+    const row = y * (width * 3 + 1);
     raw[row] = 0; // filter: none
-    for (let x = 0; x < size; x++) {
+    for (let x = 0; x < width; x++) {
       const i = row + 1 + x * 3;
       let px = NAVY;
       const d = Math.hypot(x - cx, y - cy);
       const inRing = Math.abs(d - ringR) < ringW;
       // simple "L" glyph centered
-      const inStem = x > cx - barW / 2 - size * 0.05 && x < cx + barW / 2 - size * 0.05 && y > cy - barH / 2 && y < cy + barH / 2;
-      const inFoot = x > cx - barW / 2 - size * 0.05 && x < cx - barW / 2 - size * 0.05 + footW && y > cy + barH / 2 - footH && y < cy + barH / 2;
+      const inStem = x > cx - barW / 2 - unit * 0.05 && x < cx + barW / 2 - unit * 0.05 && y > cy - barH / 2 && y < cy + barH / 2;
+      const inFoot = x > cx - barW / 2 - unit * 0.05 && x < cx - barW / 2 - unit * 0.05 + footW && y > cy + barH / 2 - footH && y < cy + barH / 2;
       if (inRing || inStem || inFoot) px = GOLD;
       raw[i] = px[0]; raw[i + 1] = px[1]; raw[i + 2] = px[2];
     }
@@ -66,7 +67,17 @@ function png(size) {
   ]);
 }
 
-for (const size of [192, 512]) {
-  writeFileSync(`public/icon-${size}.png`, png(size));
-  console.log(`wrote public/icon-${size}.png`);
+mkdirSync("public/icons", { recursive: true });
+for (const size of [72, 96, 128, 144, 152, 180, 192, 384, 512]) {
+  const name = size === 180 ? "apple-touch-icon.png" : `icon-${size}x${size}.png`;
+  writeFileSync(`public/icons/${name}`, png(size));
 }
+for (const size of [192, 512]) writeFileSync(`public/icons/icon-maskable-${size}.png`, png(size));
+mkdirSync("public/icons/splash", { recursive: true });
+for (const [width, height] of [[640, 1136], [750, 1334], [828, 1792], [1125, 2436], [1170, 2532], [1242, 2688], [1284, 2778]]) {
+  writeFileSync(`public/icons/splash/apple-splash-${width}x${height}.png`, png(width, height));
+}
+mkdirSync("public/screenshots", { recursive: true });
+writeFileSync("public/screenshots/home-mobile.png", png(1080, 1920));
+writeFileSync("public/screenshots/home-desktop.png", png(1920, 1080));
+console.log("wrote PWA icons to public/icons");
