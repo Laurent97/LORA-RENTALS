@@ -47,7 +47,7 @@ export function initials(name: string): string {
 }
 
 export function qrUrl(data: string, size = 200): string {
-  return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(
+  return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&margin=4&data=${encodeURIComponent(
     data
   )}&bgcolor=ffffff&color=0A1F44`;
 }
