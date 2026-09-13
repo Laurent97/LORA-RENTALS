@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
-import { CalendarDays, Download, MapPin, QrCode, Star, XCircle } from "lucide-react";
+import { CalendarDays, Download, MapPin, QrCode, Share2, Star, XCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -14,6 +14,7 @@ import { StatusBadge } from "@/components/status-badge";
 import { EmptyState } from "@/components/empty-state";
 import { TripTimeline } from "@/components/trip-timeline";
 import { SosButton } from "@/components/sos-button";
+import { TripTracker } from "@/components/trip-tracker";
 import { BOOKING_TIMELINE, PAYMENT_METHOD_LABELS } from "@/lib/constants";
 import { useVehicles } from "@/lib/lookup";
 import { useApp } from "@/lib/store";
@@ -113,6 +114,20 @@ export default function MyBookingsPage() {
                           <Button variant="outline" size="sm" onClick={() => setQrBooking(b)}>
                             <QrCode className="h-3.5 w-3.5" /> Pickup QR
                           </Button>
+                          {b.status === "picked_up" && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                const token = b.qrToken ?? b.qrCode;
+                                const link = `${window.location.origin}/track/${encodeURIComponent(token)}`;
+                                navigator.clipboard.writeText(link);
+                                toast.success("Live tracking link copied");
+                              }}
+                            >
+                              <Share2 className="h-3.5 w-3.5" /> Share live trip
+                            </Button>
+                          )}
                           <Button variant="outline" size="sm" onClick={() => toast.success("Receipt downloaded (demo)")}>
                             <Download className="h-3.5 w-3.5" /> Receipt
                           </Button>
@@ -148,6 +163,7 @@ export default function MyBookingsPage() {
       </Tabs>
 
       {activeTrip && <SosButton booking={activeTrip} />}
+      {activeTrip && <TripTracker booking={activeTrip} />}
 
       <Dialog open={!!qrBooking} onOpenChange={() => setQrBooking(null)}>
         <DialogContent className="text-center" onClose={() => setQrBooking(null)}>

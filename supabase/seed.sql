@@ -495,6 +495,16 @@ create table if not exists public.sos_alerts (
   created_at timestamptz not null default now()
 );
 
+create table if not exists public.trip_locations (
+  id uuid primary key default uuid_generate_v4(),
+  booking_id uuid not null references public.bookings(id) on delete cascade,
+  lat double precision not null,
+  lng double precision not null,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists trip_locations_booking_idx on public.trip_locations(booking_id, created_at desc);
+
 create table if not exists public.posts (
   id uuid primary key default uuid_generate_v4(),
   slug text unique not null,
@@ -613,6 +623,18 @@ create policy "sos_insert" on public.sos_alerts for insert with check (user_id =
 create policy "sos_read" on public.sos_alerts for select
   using (user_id = auth.uid() or public.is_admin());
 create policy "sos_admin_update" on public.sos_alerts for update using (public.is_admin());
+
+alter table public.trip_locations enable row level security;
+drop policy if exists "trip_locations_insert_customer" on public.trip_locations;
+drop policy if exists "trip_locations_read" on public.trip_locations;
+create policy "trip_locations_insert_customer" on public.trip_locations for insert with check (
+  exists (select 1 from public.bookings b where b.id = booking_id and b.customer_id = auth.uid())
+);
+create policy "trip_locations_read" on public.trip_locations for select
+  using (
+    public.is_admin() or
+    exists (select 1 from public.bookings b where b.id = booking_id and (b.customer_id = auth.uid() or b.owner_id = auth.uid()))
+  );
 
 drop policy if exists "posts_public_read" on public.posts;
 drop policy if exists "posts_admin_write" on public.posts;

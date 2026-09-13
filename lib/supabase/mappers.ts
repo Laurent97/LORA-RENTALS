@@ -16,6 +16,7 @@ import type {
   ReviewReply,
   ReviewReport,
   SosAlert,
+  TripLocation,
   User,
   Vehicle,
 } from "@/types";
@@ -435,4 +436,20 @@ export const airportToRow = (a: AirportBooking) => ({
   arrival_time: a.arrivalTime ?? null,
   terminal: a.terminal ?? null,
   meet_greet: a.meetGreet,
+});
+
+export const tripLocationFromRow = (r: any): TripLocation => ({
+  id: r.id,
+  bookingId: r.booking_id,
+  lat: r.lat,
+  lng: r.lng,
+  createdAt: r.created_at,
+});
+
+export const tripLocationToRow = (t: TripLocation) => ({
+  id: t.id,
+  booking_id: t.bookingId,
+  lat: t.lat,
+  lng: t.lng,
+  created_at: t.createdAt,
 });

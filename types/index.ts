@@ -290,6 +290,14 @@ export interface SosAlert {
   createdAt: string;
 }
 
+export interface TripLocation {
+  id: string;
+  bookingId: string;
+  lat: number;
+  lng: number;
+  createdAt: string;
+}
+
 export type PostCategory = "travel" | "tips" | "news" | "destinations";
 
 export interface Post {
