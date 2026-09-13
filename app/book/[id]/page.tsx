@@ -2,8 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { notFound, useParams, useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { notFound, useParams, useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
   ArrowLeft,
@@ -35,6 +35,7 @@ const STEPS = ["Dates & location", "Driver details", "Extras & payment", "Confir
 export default function BookingPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const vehicles = useVehicles();
   const vehicle = vehicles.find((v) => v.id === id);
   const { user, currency, addBooking, loyalty, redeemPoints } = useApp();
@@ -60,6 +61,20 @@ export default function BookingPage() {
   }, [hydrated, user, vehicle, router]);
 
   // Vehicle/user may resolve after hydration — sync defaults once available.
+  const queryPrefilled = useRef(false);
+  useEffect(() => {
+    if (!vehicle || queryPrefilled.current) return;
+    const s = searchParams.get("start") ?? "";
+    const e = searchParams.get("end") ?? "";
+    const p = searchParams.get("pickup") ?? searchParams.get("location") ?? vehicle.location;
+    const d = searchParams.get("dropoff") ?? searchParams.get("location") ?? vehicle.location;
+    if (s) setStart(s);
+    if (e) setEnd(e);
+    setPickup((prev) => prev || p);
+    setDropoff((prev) => prev || d);
+    queryPrefilled.current = true;
+  }, [vehicle, searchParams]);
+
   useEffect(() => {
     if (vehicle) {
       setPickup((p) => p || vehicle.location);

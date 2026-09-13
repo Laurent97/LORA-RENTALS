@@ -37,6 +37,95 @@ export const RWANDA_LOCATIONS = [
   "Karongi",
 ] as const;
 
+export type RwandaDestination = {
+  name: string;
+  keywords: string[];
+  recommendedCarType: CarType;
+  roadConditions: string;
+  fuelEstimate: string;
+  lodging: string[];
+  routes: string[];
+  itinerary: string[];
+};
+
+export const RWANDA_DESTINATIONS: RwandaDestination[] = [
+  {
+    name: "Volcanoes National Park",
+    keywords: ["gorilla", "volcanoes", "musanze", "ruhengeri", "kinigi"],
+    recommendedCarType: "4x4",
+    roadConditions: "Tarmac to Musanze, murram for the final 15 km to Kinigi. A 4x4 is recommended in rainy seasons.",
+    fuelEstimate: "RWF 45,000–60,000 round trip from Kigali (≈210 km).",
+    lodging: ["Virunga Lodge", "Sabyinyo Silverback Lodge", "Le Bambou Gorilla Lodge"],
+    routes: ["Kigali → Musanze → Kinigi", "Scenic drive along the Volcanoes foothills"],
+    itinerary: [
+      "Drive Kigali to Musanze, check in and relax",
+      "Early gorilla trek in Volcanoes National Park",
+      "Visit Iby'Iwacu cultural village or golden monkeys",
+      "Scenic drive back to Kigali",
+    ],
+  },
+  {
+    name: "Lake Kivu",
+    keywords: ["lake kivu", "gisenyi", "rubavu", "kibuye", "karongi", "beach"],
+    recommendedCarType: "suv",
+    roadConditions: "Good tarmac from Kigali to Gisenyi/Rubavu (≈160 km).",
+    fuelEstimate: "RWF 35,000–50,000 for a Kigali–Gisenyi round trip.",
+    lodging: ["Lake Kivu Serena Hotel", "Paradise Malahide", "Cormoran Lodge"],
+    routes: ["Kigali → Gisenyi (Rubavu) lakeside road", "Gisenyi → Kibuye (Karongi) panoramic ridge"],
+    itinerary: [
+      "Drive to Lake Kivu, lakeside check-in",
+      "Relax on the beach or take a boat ride",
+      "Visit nearby coffee plantations or hot springs",
+      "Return to Kigali via Kigali–Rubavu road",
+    ],
+  },
+  {
+    name: "Akagera National Park",
+    keywords: ["akagera", "safari", "nyagatare", "wildlife"],
+    recommendedCarType: "4x4",
+    roadConditions: "Tarmac to Kayonza, then murram into the park. 4x4 is required for game drives.",
+    fuelEstimate: "RWF 55,000–75,000 round trip from Kigali (≈260 km).",
+    lodging: ["Magashi Camp", "Ruzizi Tented Lodge", "Akagera Game Lodge"],
+    routes: ["Kigali → Kayonza → Akagera south gate", "Game-drive circuits inside the park"],
+    itinerary: [
+      "Drive to Akagera, afternoon game drive",
+      "Full-day safari: elephant, buffalo, giraffe",
+      "Boat safari on Lake Ihema",
+      "Morning drive and return to Kigali",
+    ],
+  },
+  {
+    name: "Nyungwe Forest",
+    keywords: ["nyungwe", "canopy", "chimpanzee", "huye", "butare"],
+    recommendedCarType: "4x4",
+    roadConditions: "Winding tarmac and murram through the hills; 4x4 advised in wet weather.",
+    fuelEstimate: "RWF 60,000–80,000 round trip from Kigali (≈320 km).",
+    lodging: ["One&Only Nyungwe House", "Nyungwe Top View Hill Hotel"],
+    routes: ["Kigali → Huye → Nyungwe (scenic highlands)", "Canopy walkway loop"],
+    itinerary: [
+      "Drive to Nyungwe, stop in Huye for lunch",
+      "Chimpanzee trek or Colobus monkey tracking",
+      "Canopy walkway and tea-plantation visit",
+      "Return to Kigali via Nyanza King's Palace",
+    ],
+  },
+  {
+    name: "Kigali City",
+    keywords: ["kigali", "city", "genocide memorial", "conference"],
+    recommendedCarType: "sedan",
+    roadConditions: "Well-paved city roads.",
+    fuelEstimate: "RWF 10,000–20,000 for a day around town.",
+    lodging: ["The Retreat", "Kigali Marriott", "Onomo Hotel Kigali"],
+    routes: ["Kigali city loop", "Kigali Genocide Memorial → Kimironko Market → Inema Arts"],
+    itinerary: [
+      "Kigali Genocide Memorial and city highlights",
+      "Kimironko Market and local lunch",
+      "Art galleries or business meetings",
+      "Sunset at Mt Kigali viewpoint",
+    ],
+  },
+];
+
 export const KIGALI_DISTRICTS = ["Gasabo", "Kicukiro", "Nyarugenge"] as const;
 
 // ─── Vehicle taxonomy ────────────────────────────────────────────────────────

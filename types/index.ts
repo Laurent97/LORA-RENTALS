@@ -392,4 +392,32 @@ export interface ParsedSearch {
   maxPrice?: number;
 }
 
+export type ConciergeMessageRole = "user" | "assistant";
+
+export interface ConciergeMessage {
+  role: ConciergeMessageRole;
+  content: string;
+}
+
+export interface ConciergeRecommendation {
+  carType: CarType;
+  location: string;
+  startDate?: string;
+  endDate?: string;
+  days?: number;
+  passengers?: number;
+  itinerary: string[];
+  fuelEstimate: string;
+  roadConditions: string;
+  lodging: string[];
+  routes: string[];
+}
+
+export interface ConciergeResponse {
+  message: string;
+  recommendation: ConciergeRecommendation;
+  vehicles: Vehicle[];
+  source: "llm" | "rules";
+}
+
 export type Locale = "en" | "rw" | "fr";
