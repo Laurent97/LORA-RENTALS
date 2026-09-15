@@ -1,6 +1,6 @@
 // ─── LORA RENTALS LTD — Core Domain Types (Supabase-ready) ───────────────────
 
-export type UserRole = "customer" | "owner" | "admin" | "corporate_admin" | "corporate_manager" | "corporate_member";
+export type UserRole = "customer" | "owner" | "driver" | "admin" | "corporate_admin" | "corporate_manager" | "corporate_member";
 export type KycStatus = "pending" | "verified" | "rejected" | "none";
 export type VehicleStatus = "available" | "unavailable" | "maintenance" | "pending_approval";
 export type BookingStatus =
@@ -814,9 +814,31 @@ export type RentalMode = "self_drive" | "with_driver" | "both";
 export type DriverGender = "male" | "female" | "other";
 export type DriverBackgroundCheckStatus = "pending" | "approved" | "rejected";
 
+export type DriverType = "owner_attached" | "independent";
+export type DriverKycStatus = "pending" | "submitted" | "approved" | "rejected";
+export type DriverBookingStatus =
+  | "pending"
+  | "accepted"
+  | "declined"
+  | "confirmed"
+  | "in_progress"
+  | "completed"
+  | "cancelled"
+  | "no_show";
+export type DriverBookingServiceType =
+  | "full_day"
+  | "half_day"
+  | "hourly"
+  | "airport_pickup"
+  | "tour"
+  | "long_distance";
+export type DriverEarningType = "trip" | "bonus" | "tip" | "penalty";
+export type DriverEarningStatus = "pending" | "available" | "paid" | "withdrawn";
+
 export interface Driver {
   id: string;
   ownerId: string;
+  userId?: string;
   fullName: string;
   phone?: string;
   whatsapp?: string;
@@ -825,6 +847,7 @@ export interface Driver {
   gender?: DriverGender;
   nationality?: string;
   city?: string;
+  district?: string;
   languages: string[];
   photoUrl?: string;
   passportPhotoUrl?: string;
@@ -832,18 +855,100 @@ export interface Driver {
   licensePhotoUrl?: string;
   licenseExpiry?: string;
   nationalIdUrl?: string;
+  criminalRecordUrl?: string;
   backgroundCheckStatus: DriverBackgroundCheckStatus;
   yearsOfExperience: number;
   bio?: string;
   specialties: string[];
-  ratingAvg: number;
-  ratingCount: number;
+  vehicleTypes: string[];
+  driverType: DriverType;
+  isIndependent: boolean;
+  dailyRateRwf?: number;
+  hourlyRateRwf?: number;
+  halfDayRateRwf?: number;
+  airportPickupRateRwf?: number;
+  minHours: number;
+  serviceRadiusKm: number;
+  homeCity?: string;
+  servesCities: string[];
+  maxPassengers: number;
+  acceptsLongDistance: boolean;
+  acceptsAirportPickup: boolean;
+  acceptsNightDriving: boolean;
+  acceptsOutsideKigali: boolean;
+  availableFrom: string;
+  availableUntil: string;
+  unavailableDates: string[];
+  totalTrips: number;
+  totalEarningsRwf: number;
+  outstandingBalanceRwf: number;
+  kycStatus: DriverKycStatus;
   isAvailable: boolean;
   isVerified: boolean;
+  approvedBy?: string;
+  approvedAt?: string;
   verifiedAt?: string;
   verifiedBy?: string;
+  ratingAvg: number;
+  ratingCount: number;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface DriverBooking {
+  id: string;
+  bookingId: string;
+  driverId: string;
+  customerId?: string;
+  ownerId?: string;
+  serviceType: DriverBookingServiceType;
+  startAt: string;
+  endAt?: string;
+  pickupLocation?: string;
+  dropoffLocation?: string;
+  passengers?: number;
+  rateRwf: number;
+  hours?: number;
+  days?: number;
+  subtotalRwf: number;
+  platformCommissionRwf?: number;
+  driverNetRwf?: number;
+  depositRwf?: number;
+  status: DriverBookingStatus;
+  contactRevealedAt?: string;
+  acceptedAt?: string;
+  startedAt?: string;
+  completedAt?: string;
+  cancelledAt?: string;
+  cancelledBy?: string;
+  cancellationReason?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DriverAvailability {
+  id: string;
+  driverId: string;
+  date: string;
+  isAvailable: boolean;
+  availableFrom?: string;
+  availableUntil?: string;
+  reason?: string;
+  createdAt: string;
+}
+
+export interface DriverEarning {
+  id: string;
+  driverId: string;
+  driverBookingId?: string;
+  amountRwf: number;
+  type: DriverEarningType;
+  status: DriverEarningStatus;
+  paidAt?: string;
+  paidMethod?: string;
+  paidReference?: string;
+  createdAt: string;
 }
 
 export interface DriverReview {
