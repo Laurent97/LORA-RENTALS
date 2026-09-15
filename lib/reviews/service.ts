@@ -48,16 +48,20 @@ export const reviewApi = {
 };
 
 // ─── Cloudinary photo upload ─────────────────────────────────────────────────
-// Unsigned upload preset flow. Configure NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME and
-// NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET; without them the caller should skip
-// upload (PhotoUploader hides itself).
+// Unsigned upload preset flow. NEXT_PUBLIC_ env vars take precedence, but the
+// provided LORA account is used as the fallback so reviews work out of the box.
 
-export const cloudinaryReady = () =>
-  !!process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME && !!process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
+const FALLBACK_CLOUD_NAME = "dja9mdr9c";
+const FALLBACK_UPLOAD_PRESET = "lovexeastafrica";
+
+const getCloudName = () => process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || FALLBACK_CLOUD_NAME;
+const getUploadPreset = () => process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || FALLBACK_UPLOAD_PRESET;
+
+export const cloudinaryReady = () => !!getCloudName() && !!getUploadPreset();
 
 export async function uploadReviewPhoto(file: File, onProgress?: (pct: number) => void): Promise<string> {
-  const cloud = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-  const preset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
+  const cloud = getCloudName();
+  const preset = getUploadPreset();
   if (!cloud || !preset) throw new Error("Cloudinary is not configured");
 
   const form = new FormData();
