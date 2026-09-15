@@ -43,9 +43,15 @@ const STEPS = [
 
 export default function HomePage() {
   const { hydrated, hydrate } = useApp((s) => ({ hydrated: s.hydrated, hydrate: s.hydrate }));
-  const featured = useVehicles()
-    .filter((v) => v.status === "available" && v.verified && v.featured)
-    .slice(0, 6);
+  const vehicles = useVehicles()
+    .filter((v) => v.verified && !v.deletedAt && v.status !== "pending_approval")
+    .sort((a, b) => {
+      if (a.featured && !b.featured) return -1;
+      if (!a.featured && b.featured) return 1;
+      if (a.status === "available" && b.status !== "available") return -1;
+      if (a.status !== "available" && b.status === "available") return 1;
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
 
   useEffect(() => {
     if (!hydrated) void hydrate();
@@ -108,31 +114,23 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── Featured cars ────────────────────────────────── */}
+      {/* ── Fleet ────────────────────────────────────────── */}
       <section className="container py-16 md:py-24">
-        <div className="mb-8 flex items-end justify-between">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-gold-600 dark:text-gold">Featured fleet</p>
-            <h2 className="mt-1 font-display text-3xl font-extrabold tracking-tight md:text-4xl">
-              Featured fleet
-            </h2>
+        <div className="mb-8">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-gold-600 dark:text-gold">Our fleet</p>
+          <h2 className="mt-1 font-display text-3xl font-extrabold tracking-tight md:text-4xl">
+            Browse all vehicles
+          </h2>
+        </div>
+        {vehicles.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No vehicles available right now.</p>
+        ) : (
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {vehicles.map((v) => (
+              <CarCard key={v.id} vehicle={v} />
+            ))}
           </div>
-          <Link href="/browse" className="hidden sm:block">
-            <Button variant="outline">
-              View all <ArrowRight className="h-4 w-4" />
-            </Button>
-          </Link>
-        </div>
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {featured.map((v) => (
-            <CarCard key={v.id} vehicle={v} />
-          ))}
-        </div>
-        <div className="mt-8 text-center sm:hidden">
-          <Link href="/browse">
-            <Button variant="outline" className="w-full">View all cars</Button>
-          </Link>
-        </div>
+        )}
       </section>
 
       {/* ── Airport pickup tile ──────────────────────────── */}
