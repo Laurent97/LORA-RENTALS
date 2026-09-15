@@ -108,3 +108,48 @@ export function parseBookingQrPayload(raw: string): Partial<BookingQrPayload> | 
     total: total ? Number(total) : 0,
   };
 }
+
+const QR_BASE = "https://lorarentals.org/pickup";
+
+function b64Encode(s: string) {
+  if (typeof Buffer !== "undefined") return Buffer.from(s).toString("base64url").replace(/=+$/, "");
+  return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+function b64Decode(s: string) {
+  try {
+    const normal = s.replace(/-/g, "+").replace(/_/g, "/");
+    if (typeof Buffer !== "undefined") return Buffer.from(normal, "base64").toString("utf8");
+    return atob(normal);
+  } catch {
+    return null;
+  }
+}
+
+export function buildBookingPickupUrl(payload: string) {
+  return `${QR_BASE}/${b64Encode(payload)}`;
+}
+
+export function decodeBookingQrFromUrl(raw: string): string | null {
+  try {
+    const url = new URL(raw);
+    if (!url.pathname.startsWith("/pickup/")) return null;
+    const encoded = decodeURIComponent(url.pathname.slice("/pickup/".length));
+    return b64Decode(encoded);
+  } catch {
+    return null;
+  }
+}
+
+export function decodeBookingQrPayload(encoded: string): string | null {
+  return b64Decode(encoded);
+}
+
+export function normalizeBookingQrInput(raw: string): string | null {
+  const v = raw.trim();
+  if (v.startsWith("https://lorarentals.org/pickup/")) {
+    return decodeBookingQrFromUrl(v);
+  }
+  if (v.startsWith("LORA|") || v.startsWith("LORA:")) return v;
+  return v;
+}

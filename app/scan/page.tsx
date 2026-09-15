@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { StatusBadge } from "@/components/status-badge";
 import { useApp } from "@/lib/store";
 import { getSupabase } from "@/lib/supabase/client";
-import { bookingRef, fmtDate, parseBookingQrPayload } from "@/lib/utils";
+import { bookingRef, fmtDate, normalizeBookingQrInput, parseBookingQrPayload } from "@/lib/utils";
 import type { Booking, User, Vehicle } from "@/types";
 
 type Phase = "idle" | "scanning" | "found" | "done";
@@ -80,15 +80,10 @@ export default function ScanPage() {
   }, [user, router]);
 
   const lookup = async (raw: string) => {
-    const token = raw.trim();
-    // QR encodes "LORA|1|<token>|<details...>" or legacy "LORA:<token>"
-    let key = token;
-    if (token.startsWith("LORA|")) {
-      const parsed = parseBookingQrPayload(token);
-      if (parsed?.token) key = parsed.token;
-    } else if (token.startsWith("LORA:")) {
-      key = token.slice(5);
-    }
+    const normalized = normalizeBookingQrInput(raw);
+    const token = normalized ?? raw.trim();
+    const parsed = parseBookingQrPayload(token);
+    const key = parsed?.token ?? token;
 
     setError("");
     try {

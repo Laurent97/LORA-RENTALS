@@ -29,7 +29,7 @@ import { SafetyWarning } from "@/components/safety/SafetyWarning";
 import { getSupabase } from "@/lib/supabase/client";
 import { useHydrated, useVehicles } from "@/lib/lookup";
 import { useApp } from "@/lib/store";
-import { buildBookingQrPayload, cn, formatMoney, qrUrl, rentalDays, bookingRef, fmtDate } from "@/lib/utils";
+import { buildBookingPickupUrl, buildBookingQrPayload, cn, formatMoney, qrUrl, rentalDays, bookingRef, fmtDate } from "@/lib/utils";
 import type { Booking, PaymentMethod, PaymentPoint } from "@/types";
 
 const STEPS = ["Dates & location", "Driver details", "Extras & payment", "Confirmed"];
@@ -385,7 +385,7 @@ export default function BookingPage() {
                 </p>
                 <div className="mx-auto mt-6 w-fit rounded-2xl border border-border bg-white p-4 text-left">
                   <Image
-                    src={qrUrl(buildBookingQrPayload({
+                    src={qrUrl(buildBookingPickupUrl(buildBookingQrPayload({
                       token: confirmed.qrToken ?? confirmed.qrCode,
                       ref: bookingRef(confirmed.id),
                       make: vehicle.make,
@@ -396,7 +396,7 @@ export default function BookingPage() {
                       end: fmtDate(confirmed.endDate),
                       pickup: confirmed.pickupLocation,
                       total: confirmed.totalPrice,
-                    }))}
+                    })))}
                     alt="Pickup QR code"
                     width={180}
                     height={180}

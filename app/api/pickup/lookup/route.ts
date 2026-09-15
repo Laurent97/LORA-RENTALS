@@ -1,60 +1,69 @@
 import { NextResponse } from "next/server";
-import { getSupabaseAdmin, getCallerProfile } from "@/lib/supabase/admin";
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { bookingFromRow, userFromRow, vehicleFromRow } from "@/lib/supabase/mappers";
-import { normalizeBookingQrInput, parseBookingQrPayload } from "@/lib/utils";
+import { bookingRef, normalizeBookingQrInput, parseBookingQrPayload } from "@/lib/utils";
 
-export async function POST(req: Request) {
+function isBookingRef(v: string) {
+  return /^LRA-[A-F0-9]{6}$/i.test(v);
+}
+
+export async function GET(req: Request) {
   try {
     const sb = getSupabaseAdmin();
     if (!sb) {
       return NextResponse.json({ error: "Server not configured" }, { status: 500 });
     }
 
-    const caller = await getCallerProfile(req.headers.get("authorization"));
-    if (!caller || (caller.role !== "owner" && caller.role !== "admin")) {
-      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-    }
-
-    const { code } = (await req.json().catch(() => ({}))) as { code?: string };
-    if (!code?.trim()) {
+    const { searchParams } = new URL(req.url);
+    const rawCode = searchParams.get("code") ?? "";
+    if (!rawCode.trim()) {
       return NextResponse.json({ error: "code is required" }, { status: 400 });
     }
 
-    const normalized = normalizeBookingQrInput(code.trim()) ?? code.trim();
-    const parsed = parseBookingQrPayload(normalized);
-    const token = parsed?.token ?? normalized;
+    let payload = normalizeBookingQrInput(rawCode) ?? rawCode;
+    const parsed = parseBookingQrPayload(payload);
+    let token = parsed?.token ?? payload;
 
-    const q = sb
+    if (isBookingRef(payload)) {
+      token = payload;
+    }
+
+    let q = sb
       .from("bookings")
       .select("*, vehicles(*), customer:users!customer_id(*), owner:users!owner_id(*)")
       .or(`qr_token.eq.${token},qr_code.ilike.${token}`)
       .maybeSingle();
+
+    if (isBookingRef(token)) {
+      q = sb
+        .from("bookings")
+        .select("*, vehicles(*), customer:users!customer_id(*), owner:users!owner_id(*)")
+        .ilike("qr_code", token)
+        .maybeSingle();
+    }
 
     const { data: row, error } = await q;
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
     if (!row) {
-      return NextResponse.json({ error: "No booking matches that code" }, { status: 404 });
+      return NextResponse.json({ error: "No booking found for this code" }, { status: 404 });
     }
 
     const booking = bookingFromRow(row);
-    if (caller.role === "owner" && booking.ownerId !== caller.id) {
-      return NextResponse.json({ error: "This booking isn't for one of your vehicles" }, { status: 403 });
-    }
-
     const v = (row as any).vehicles;
     const customer = (row as any).customer;
     const owner = (row as any).owner;
 
     return NextResponse.json({
       booking,
+      ref: bookingRef(booking.id),
       vehicle: v ? vehicleFromRow(v) : null,
       customer: customer ? userFromRow(customer) : null,
       owner: owner ? userFromRow(owner) : null,
     });
   } catch (err) {
-    console.error("[scan/lookup] error:", err);
+    console.error("[pickup/lookup] error:", err);
     return NextResponse.json({ error: "Lookup failed" }, { status: 500 });
   }
 }

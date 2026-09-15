@@ -19,7 +19,7 @@ import { TripTracker } from "@/components/trip-tracker";
 import { BOOKING_TIMELINE, PAYMENT_METHOD_LABELS } from "@/lib/constants";
 import { useVehicles } from "@/lib/lookup";
 import { useApp } from "@/lib/store";
-import { buildBookingQrPayload, cn, fmtDate, formatMoney, qrUrl, bookingRef } from "@/lib/utils";
+import { buildBookingPickupUrl, buildBookingQrPayload, cn, fmtDate, formatMoney, qrUrl, bookingRef } from "@/lib/utils";
 import type { Booking } from "@/types";
 
 const GROUPS: Record<string, (b: Booking) => boolean> = {
@@ -185,7 +185,7 @@ export default function MyBookingsPage() {
                   return (
                     <>
                       <Image
-                        src={qrUrl(buildBookingQrPayload({
+                        src={qrUrl(buildBookingPickupUrl(buildBookingQrPayload({
                           token: qrBooking.qrToken ?? qrBooking.qrCode,
                           ref: bookingRef(qrBooking.id),
                           make: v?.make ?? "",
@@ -196,7 +196,7 @@ export default function MyBookingsPage() {
                           end: fmtDate(qrBooking.endDate),
                           pickup: qrBooking.pickupLocation,
                           total: qrBooking.totalPrice,
-                        }))}
+                        })))}
                         alt="Pickup QR"
                         width={220}
                         height={220}
