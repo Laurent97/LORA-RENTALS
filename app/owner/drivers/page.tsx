@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Plus, Upload, User } from "lucide-react";
+import Link from "next/link";
+import { Plus, QrCode, Upload, User } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -114,6 +115,9 @@ export default function OwnerDriversPage() {
                   </div>
                 </div>
                 {d.license_expiry && <p className="mt-3 text-xs text-muted-foreground">License expires {fmtDate(d.license_expiry)}</p>}
+                <Link href={`/owner/drivers/${d.id}/badge`} className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-navy-700 hover:text-gold dark:text-gold/90 dark:hover:text-gold">
+                  <QrCode className="h-3.5 w-3.5" /> Badge / QR
+                </Link>
               </CardContent>
             </Card>
           ))}
