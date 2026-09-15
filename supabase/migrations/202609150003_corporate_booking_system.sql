@@ -19,6 +19,18 @@ alter table public.corporate_accounts add column if not exists approved_by uuid 
 alter table public.corporate_accounts add column if not exists approved_at timestamptz;
 alter table public.corporate_accounts add column if not exists updated_at timestamptz not null default now();
 
+create table if not exists public.cost_centers (
+  id uuid primary key default uuid_generate_v4(),
+  corporate_id uuid not null references public.corporate_accounts(id) on delete cascade,
+  name text not null,
+  code text,
+  monthly_budget_rwf numeric,
+  spent_this_month_rwf numeric default 0,
+  manager_id uuid references public.users(id),
+  is_active boolean default true,
+  created_at timestamptz not null default now()
+);
+
 -- Add corporate_id to members table and backfill from account_id
 alter table public.corporate_members add column if not exists corporate_id uuid references public.corporate_accounts(id);
 update public.corporate_members set corporate_id = account_id where corporate_id is null and account_id is not null;
@@ -31,18 +43,6 @@ alter table public.corporate_members add column if not exists invited_by uuid re
 alter table public.corporate_members add column if not exists invited_at timestamptz;
 alter table public.corporate_members add column if not exists joined_at timestamptz;
 alter table public.corporate_members add column if not exists status text not null default 'active' check (status in ('invited','active','suspended','removed'));
-
-create table if not exists public.cost_centers (
-  id uuid primary key default uuid_generate_v4(),
-  corporate_id uuid not null references public.corporate_accounts(id) on delete cascade,
-  name text not null,
-  code text,
-  monthly_budget_rwf numeric,
-  spent_this_month_rwf numeric default 0,
-  manager_id uuid references public.users(id),
-  is_active boolean default true,
-  created_at timestamptz not null default now()
-);
 
 create table if not exists public.corporate_booking_policies (
   corporate_id uuid primary key references public.corporate_accounts(id) on delete cascade,
