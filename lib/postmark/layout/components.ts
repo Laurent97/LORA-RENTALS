@@ -1,5 +1,6 @@
 import { c, font, theme } from "./styles";
 import { EMAIL } from "../config";
+import { BRAND } from "@/lib/constants";
 import type { Tx } from "../i18n";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -122,6 +123,28 @@ export const alert = (message: string, kind: Tone = "info") =>
   <tr><td style="padding:16px 20px;${base}font-size:14px;line-height:1.6;color:${c.text};">${message}</td></tr></table>`;
 
 export const payAtPickup = (t: Tx) => alert(`💵 <strong>${t.payAtPickup}</strong><br/>${t.accepted}`, "success");
+
+export const safetyNotice = () =>
+  `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:${c.goldLight};border-left:4px solid ${c.gold};border-radius:${theme.radius.md};margin:0 0 24px;">
+    <tr><td style="padding:24px;">
+      <div style="${base}font-size:15px;font-weight:800;color:${c.navy};letter-spacing:0.5px;margin-bottom:16px;">🛡️ IMPORTANT — READ BEFORE YOU PAY</div>
+      <p style="${base}font-size:15px;line-height:1.6;color:${c.text};margin:0 0 12px;">
+        <strong>⚠️ NEVER</strong> pay any booking fee, deposit, or advance payment to anyone claiming to represent LORA Rentals before you have the car in your hands.
+      </p>
+      <p style="${base}font-size:15px;line-height:1.6;color:${c.success};margin:0 0 12px;font-weight:600;">
+        ✅ You pay <strong>ONLY</strong> at the LORA office or at pickup — when the car you booked is physically in front of you.
+      </p>
+      <p style="${base}font-size:14px;line-height:1.6;color:${c.textMuted};margin:0 0 16px;">
+        🚫 LORA Rentals <strong>NEVER</strong> requests advance payments via WhatsApp, Mobile Money, bank transfer, or any link outside the official LORA app.
+      </p>
+      <p style="${base}font-size:14px;line-height:1.6;color:${c.navy};margin:0 0 16px;">
+        📞 Report suspicious requests immediately: <strong>${esc(BRAND.phone)}</strong> · ${esc(BRAND.supportEmail)}
+      </p>
+      <p style="${base}font-size:13px;line-height:1.6;color:${c.textMuted};font-style:italic;margin:0;">
+        ⚖️ ${esc(BRAND.name)} is not responsible for any money lost through payments made outside the official LORA app or in violation of this notice.
+      </p>
+    </td></tr>
+  </table>`;
 
 export const banner = (title: string, subtitle: string, kind: Tone = "error") =>
   `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:${tone[kind].bg};border-radius:${theme.radius.md};margin:0 0 24px;">

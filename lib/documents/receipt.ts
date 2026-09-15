@@ -25,6 +25,12 @@ export interface ReceiptData {
 export function renderReceipt(r: ReceiptData): string {
   const fmt = (n: number) => `RWF ${n.toLocaleString("en-RW")}`;
   const body = `
+    <div class="safety">
+      <div class="safety-title">🛡️ LORA Safety Notice</div>
+      <p>
+        This receipt confirms payment received at the LORA office or at pickup only. ${BRAND.name} does not charge any booking fee. We are not responsible for any payment made outside our official channels, including WhatsApp, Mobile Money, bank transfer, or third-party links.
+      </p>
+    </div>
     <div class="header">
       <div class="header-row">
         <div class="brand">

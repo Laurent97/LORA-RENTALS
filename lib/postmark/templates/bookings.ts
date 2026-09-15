@@ -3,7 +3,7 @@ import { url } from "../config";
 import type { Tx } from "../i18n";
 import {
   alert, badge, bullets, button, carImage, esc, fmtRWF, greeting, h1, infoCard, p, payAtPickup, qrImage,
-  questions, signature, stars, timeline, totalRow,
+  questions, safetyNotice, signature, stars, timeline, totalRow,
 } from "../layout/components";
 
 // Shared booking fixture used by every sample.
@@ -75,13 +75,14 @@ export const bookings = {
 
   "booking-confirmed": defineTemplate({
     name: "Confirmed (customer)", category: "bookings",
-    subject: (d) => `✅ Booking Confirmed — ${d.car_name} on ${d.pickup_date}`,
+    subject: () => "✅ Booking Confirmed — IMPORTANT: Read before you pay",
     preheader: () => "Your LORA ride is confirmed. Pay at pickup — no booking fee.",
     sample: B,
     html: (d, t) => [
       badge("✅ Booking confirmed", "success"),
       h1(`Your ride is ready, ${esc(d.first_name)}!`, { center: true }),
       p(`${t.booking} #${esc(d.booking_id)}`, { muted: true, center: true }),
+      safetyNotice(),
       carImage(d.car_image_url, d.car_name),
       details(d, t, [[`👤 ${t.owner}`, `${esc(d.owner_name)} ✅`]]),
       payAtPickup(t),

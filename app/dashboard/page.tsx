@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { StatCard } from "@/components/stat-card";
 import { StatusBadge } from "@/components/status-badge";
 import { EmptyState } from "@/components/empty-state";
+import { SafetyWarning } from "@/components/safety/SafetyWarning";
 import { useVehicles } from "@/lib/lookup";
 import { useApp } from "@/lib/store";
 import { fmtDate, formatMoney } from "@/lib/utils";
@@ -29,6 +30,8 @@ export default function CustomerDashboard() {
         <h1 className="font-display text-2xl font-extrabold tracking-tight">Overview</h1>
         <p className="text-sm text-muted-foreground">Your rentals at a glance</p>
       </div>
+
+      <SafetyWarning variant="banner" dismissible />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard icon={CalendarDays} label="Upcoming" value={String(upcoming.length)} />

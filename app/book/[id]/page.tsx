@@ -25,6 +25,8 @@ import { Select } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BOOKING_EXTRAS, PAYMENT_METHOD_LABELS } from "@/lib/constants";
 import { LocationAutocomplete } from "@/components/location-autocomplete";
+import { SafetyWarning } from "@/components/safety/SafetyWarning";
+import { getSupabase } from "@/lib/supabase/client";
 import { useHydrated, useVehicles } from "@/lib/lookup";
 import { useApp } from "@/lib/store";
 import { cn, formatMoney, qrUrl, rentalDays, bookingRef } from "@/lib/utils";
@@ -118,6 +120,20 @@ export default function BookingPage() {
     step === 0 ? days > 0 && pickup && dropoff :
     step === 1 ? driverName.trim() && license.trim() && idNumber.trim() :
     true;
+
+  const acknowledgeSafety = async (bookingId?: string) => {
+    const sb = getSupabase();
+    const session = sb ? (await sb.auth.getSession()).data.session : null;
+    if (!session?.access_token) return;
+    await fetch("/api/safety/acknowledge", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ booking_id: bookingId ?? null, version: "1.0" }),
+    });
+  };
 
   const confirm = () => {
     setSubmitting(true);
@@ -348,7 +364,15 @@ export default function BookingPage() {
 
           {/* Step 3 — confirmation */}
           {step === 3 && confirmed && (
-            <Card className="text-center">
+            <div className="space-y-6">
+              <SafetyWarning
+                variant="full"
+                showAcknowledgeButton
+                showReport
+                bookingId={confirmed.id}
+                onAcknowledge={() => acknowledgeSafety(confirmed.id)}
+              />
+              <Card className="text-center">
               <CardContent className="p-8">
                 <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/15">
                   <CheckCircle2 className="h-9 w-9 text-emerald-500" />
@@ -374,6 +398,7 @@ export default function BookingPage() {
                 </div>
               </CardContent>
             </Card>
+            </div>
           )}
 
           {/* Nav buttons */}

@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StatusBadge } from "@/components/status-badge";
 import { EmptyState } from "@/components/empty-state";
+import { SafetyWarning } from "@/components/safety/SafetyWarning";
 import { TripTimeline } from "@/components/trip-timeline";
 import { SosButton } from "@/components/sos-button";
 import { TripTracker } from "@/components/trip-tracker";
@@ -50,6 +51,8 @@ export default function MyBookingsPage() {
         <h1 className="font-display text-2xl font-extrabold tracking-tight">My Bookings</h1>
         <p className="text-sm text-muted-foreground">Track, manage and pay at pickup</p>
       </div>
+
+      <SafetyWarning variant="banner" dismissible showReport={false} />
 
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList>
@@ -174,9 +177,12 @@ export default function MyBookingsPage() {
             </DialogDescription>
           </DialogHeader>
           {qrBooking && (
-            <div className="mx-auto w-fit rounded-2xl border border-border bg-white p-4">
-              <Image src={qrUrl(`LORA:${qrBooking.qrToken ?? qrBooking.qrCode}`, 220)} alt="Pickup QR" width={220} height={220} />
-            </div>
+            <>
+              <SafetyWarning variant="compact" showReport={false} />
+              <div className="mx-auto w-fit rounded-2xl border border-border bg-white p-4">
+                <Image src={qrUrl(`LORA:${qrBooking.qrToken ?? qrBooking.qrCode}`, 220)} alt="Pickup QR" width={220} height={220} />
+              </div>
+            </>
           )}
         </DialogContent>
       </Dialog>

@@ -100,6 +100,9 @@ export function documentShell(body: string, title: string): string {
     }
     .footer a { color: ${DOCUMENT_COLORS.gold}; text-decoration: none; }
     .note { background: #f9fafb; border-left: 4px solid ${DOCUMENT_COLORS.gold}; padding: 16px; border-radius: 0 12px 12px 0; font-size: 13px; }
+    .safety { background: #f8f6ef; border-left: 4px solid ${DOCUMENT_COLORS.gold}; padding: 18px 20px; border-radius: 0 12px 12px 0; margin-bottom: 28px; }
+    .safety-title { font-weight: 800; color: ${DOCUMENT_COLORS.navy}; font-size: 14px; margin-bottom: 8px; }
+    .safety p { margin: 0; font-size: 13px; color: ${DOCUMENT_COLORS.dark}; line-height: 1.6; }
     @media print {
       body { background: white; padding: 0; }
       .page { box-shadow: none; border-radius: 0; }

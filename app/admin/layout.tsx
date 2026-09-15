@@ -1,6 +1,6 @@
 "use client";
 
-import { Award, BadgeCheck, Building2, CalendarDays, Car, FileText, Globe, LayoutDashboard, Mail, MapPin, ScanLine, Settings, Siren, Star, User, Users, WalletCards } from "lucide-react";
+import { Award, BadgeCheck, Building2, CalendarDays, Car, FileText, Globe, LayoutDashboard, Mail, MapPin, ScanLine, Settings, ShieldAlert, Siren, Star, User, Users, WalletCards } from "lucide-react";
 import { DashboardShell, type NavItem } from "@/components/layout/dashboard-shell";
 
 const NAV: NavItem[] = [
@@ -13,6 +13,7 @@ const NAV: NavItem[] = [
   { href: "/admin/badges", label: "Driver Badges", icon: Award },
   { href: "/admin/kyc", label: "KYC Approvals", icon: BadgeCheck },
   { href: "/admin/sos", label: "SOS Alerts", icon: Siren },
+  { href: "/admin/scam-reports", label: "Scam Reports", icon: ShieldAlert },
   { href: "/admin/geofence", label: "Geofence", icon: MapPin },
   { href: "/admin/blog", label: "Blog CMS", icon: FileText },
   { href: "/admin/tenants", label: "Tenants", icon: Globe },
