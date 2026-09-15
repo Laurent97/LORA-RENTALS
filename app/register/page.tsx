@@ -7,7 +7,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { Car, UserRound } from "lucide-react";
+import { Award, Car, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -34,7 +34,7 @@ function RegisterForm() {
   const refCode = params.get("ref");
   const next = params.get("next");
   const [role, setRole] = useState<UserRole>(
-    params.get("role") === "owner" ? "owner" : "customer"
+    params.get("role") === "owner" ? "owner" : params.get("role") === "driver" ? "driver" : "customer"
   );
   const [whatsapp, setWhatsapp] = useState("");
   const [loading, setLoading] = useState(false);
@@ -94,11 +94,12 @@ function RegisterForm() {
           </div>
 
           {/* Role picker */}
-          <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
             {(
               [
                 { value: "customer", label: "I want to rent", icon: UserRound },
                 { value: "owner", label: "I own cars", icon: Car },
+                { value: "driver", label: "I am a driver", icon: Award },
               ] as const
             ).map((r) => (
               <button
@@ -118,48 +119,62 @@ function RegisterForm() {
             ))}
           </div>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <div>
-              <Label htmlFor="name" className="mb-1.5 block">Full name</Label>
-              <Input id="name" placeholder="Aline Uwase" {...register("name")} />
-              {errors.name && <p className="mt-1 text-xs text-destructive">{errors.name.message}</p>}
+          {role === "driver" ? (
+            <div className="space-y-4">
+              <p className="rounded-xl bg-navy-50 p-4 text-sm text-navy-800 dark:bg-navy-900/20 dark:text-gold">
+                Driver registration is a 5-step process: account, personal details,
+                documents, professional profile, and availability.
+              </p>
+              <Button onClick={() => router.push("/driver/signup")} variant="gold" className="w-full">
+                Continue to driver application
+              </Button>
             </div>
-            <div>
-              <Label htmlFor="email" className="mb-1.5 block">Email</Label>
-              <Input id="email" type="email" autoComplete="email" placeholder="you@example.com" {...register("email")} />
-              {errors.email && <p className="mt-1 text-xs text-destructive">{errors.email.message}</p>}
-            </div>
-            <div>
-              <Label htmlFor="phone" className="mb-1.5 block">Phone (Rwanda)</Label>
-              <Input id="phone" placeholder="+250 788 000 000" {...register("phone")} />
-              {errors.phone && <p className="mt-1 text-xs text-destructive">{errors.phone.message}</p>}
-            </div>
-            {role === "owner" && (
-              <WhatsAppInput
-                value={whatsapp}
-                onChange={setWhatsapp}
-                onVerifiedChange={(valid, normalized) => { if (valid && normalized) setWhatsapp(normalized); }}
-              />
-            )}
-            <div>
-              <Label htmlFor="password" className="mb-1.5 block">Password</Label>
-              <Input id="password" type="password" autoComplete="new-password" placeholder="••••••••" {...register("password")} />
-              {errors.password && <p className="mt-1 text-xs text-destructive">{errors.password.message}</p>}
-            </div>
-            <Button type="submit" variant="gold" className="w-full" disabled={loading}>
-              {loading ? "Creating account…" : role === "owner" ? "Register as owner" : "Create account"}
-            </Button>
-          </form>
+          ) : (
+            <>
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                <div>
+                  <Label htmlFor="name" className="mb-1.5 block">Full name</Label>
+                  <Input id="name" placeholder="Aline Uwase" {...register("name")} />
+                  {errors.name && <p className="mt-1 text-xs text-destructive">{errors.name.message}</p>}
+                </div>
+                <div>
+                  <Label htmlFor="email" className="mb-1.5 block">Email</Label>
+                  <Input id="email" type="email" autoComplete="email" placeholder="you@example.com" {...register("email")} />
+                  {errors.email && <p className="mt-1 text-xs text-destructive">{errors.email.message}</p>}
+                </div>
+                <div>
+                  <Label htmlFor="phone" className="mb-1.5 block">Phone (Rwanda)</Label>
+                  <Input id="phone" placeholder="+250 788 000 000" {...register("phone")} />
+                  {errors.phone && <p className="mt-1 text-xs text-destructive">{errors.phone.message}</p>}
+                </div>
+                {role === "owner" && (
+                  <WhatsAppInput
+                    value={whatsapp}
+                    onChange={setWhatsapp}
+                    onVerifiedChange={(valid, normalized) => { if (valid && normalized) setWhatsapp(normalized); }}
+                  />
+                )}
+                <div>
+                  <Label htmlFor="password" className="mb-1.5 block">Password</Label>
+                  <Input id="password" type="password" autoComplete="new-password" placeholder="••••••••" {...register("password")} />
+                  {errors.password && <p className="mt-1 text-xs text-destructive">{errors.password.message}</p>}
+                </div>
+                <Button type="submit" variant="gold" className="w-full" disabled={loading}>
+                  {loading ? "Creating account…" : role === "owner" ? "Register as owner" : "Create account"}
+                </Button>
+              </form>
 
-          <p className="mt-3 text-center text-xs text-muted-foreground">
-            We&apos;ll email you an 8-digit code to verify your address.
-          </p>
+              <p className="mt-3 text-center text-xs text-muted-foreground">
+                We&apos;ll email you an 8-digit code to verify your address.
+              </p>
 
-          {role === "owner" && (
-            <p className="mt-4 rounded-xl bg-secondary/60 p-3 text-xs text-muted-foreground">
-              After registering you'll complete KYC — national ID, driving license,
-              vehicle registration and insurance — before your cars go live.
-            </p>
+              {role === "owner" && (
+                <p className="mt-4 rounded-xl bg-secondary/60 p-3 text-xs text-muted-foreground">
+                  After registering you'll complete KYC — national ID, driving license,
+                  vehicle registration and insurance — before your cars go live.
+                </p>
+              )}
+            </>
           )}
 
           <p className="mt-6 text-center text-sm text-muted-foreground">
