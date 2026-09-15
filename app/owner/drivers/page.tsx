@@ -58,6 +58,7 @@ export default function OwnerDriversPage() {
 
     const insert: Record<string, any> = {
       owner_id: user.id,
+      user_id: user.id,
       full_name: String(fd.get("fullName") ?? "").trim(),
       phone: String(fd.get("phone") ?? "").trim() || null,
       email: String(fd.get("email") ?? "").trim() || null,

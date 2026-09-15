@@ -8,6 +8,8 @@ create table if not exists public.drivers (
   updated_at timestamptz not null default now()
 );
 
+alter table public.drivers alter column user_id drop not null;
+
 alter table public.drivers add column if not exists phone text;
 alter table public.drivers add column if not exists email text;
 alter table public.drivers add column if not exists bio text;
