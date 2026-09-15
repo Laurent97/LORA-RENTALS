@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { CheckCircle2, Phone, User, XCircle } from "lucide-react";
+import { CheckCircle2, Phone, Trash2, User, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -43,6 +43,22 @@ export default function AdminDriversPage() {
     } else {
       const json = await res.json().catch(() => ({}));
       alert(json.error || "Action failed");
+    }
+  };
+
+  const del = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this driver? This cannot be undone.")) return;
+    const sb = getSupabase();
+    const s = await sb?.auth.getSession();
+    const res = await fetch(`/api/admin/drivers?id=${encodeURIComponent(id)}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${s?.data.session?.access_token ?? ""}` },
+    });
+    if (res.ok) {
+      await fetchDrivers();
+    } else {
+      const json = await res.json().catch(() => ({}));
+      alert(json.error || "Delete failed");
     }
   };
 
@@ -99,13 +115,11 @@ export default function AdminDriversPage() {
                           <a href={d.criminal_record_url} target="_blank" rel="noopener noreferrer" className="ml-2 text-xs text-navy-800 underline dark:text-gold">Criminal record</a>
                         )}
                       </div>
-                      <div className="flex gap-2">
-                        {!d.is_verified ? (
-                          <Button size="sm" variant="gold" onClick={() => act(d.id, "approve")}><CheckCircle2 className="h-4 w-4" /> Approve</Button>
-                        ) : (
-                          <Button size="sm" variant="outline" onClick={() => act(d.id, d.is_available ? "suspend" : "reinstate")}>{d.is_available ? "Suspend" : "Reinstate"}</Button>
-                        )}
+                      <div className="flex flex-wrap gap-2">
+                        <Button size="sm" variant={d.is_verified ? "outline" : "gold"} onClick={() => act(d.id, "approve")} disabled={d.is_verified}><CheckCircle2 className="h-4 w-4" /> Approve</Button>
+                        <Button size="sm" variant="outline" onClick={() => act(d.id, d.is_available ? "suspend" : "reinstate")}>{d.is_available ? "Suspend" : "Reinstate"}</Button>
                         <Button size="sm" variant="ghost" className="text-destructive" onClick={() => act(d.id, "redflag")}><XCircle className="h-4 w-4" /> Red flag</Button>
+                        <Button size="sm" variant="ghost" className="text-destructive" onClick={() => del(d.id)}><Trash2 className="h-4 w-4" /> Delete</Button>
                       </div>
                     </div>
                   </CardContent>
