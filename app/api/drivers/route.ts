@@ -17,7 +17,8 @@ export async function GET(req: Request) {
 
     let q = sb
       .from("drivers")
-      .select("*, owner:users!owner_id(name, email, phone)")
+      .select("*, owner:users!owner_id(name, email, phone, deleted_at)")
+      .is("owner.deleted_at", null)
       .order("rating", { ascending: false })
       .limit(limit);
 

@@ -26,6 +26,18 @@ export async function POST(request: Request) {
   const now = new Date().toISOString();
 
   if (input.action === "delete") {
+    // Cascade driver profile, badges, and related records for this user/owner
+    const { data: driverRows } = await sb
+      .from("drivers")
+      .select("id")
+      .or(`user_id.eq.${input.userId},owner_id.eq.${input.userId}`);
+    const driverIds = (driverRows ?? []).map((d: any) => d.id);
+    if (driverIds.length) {
+      await sb.from("driver_badges").delete().in("driver_id", driverIds);
+      const { error: driversErr } = await sb.from("drivers").delete().in("id", driverIds);
+      if (driversErr) return NextResponse.json({ error: driversErr.message }, { status: 500 });
+    }
+
     let warning: string | undefined;
     try {
       const { error } = await sb.auth.admin.deleteUser(input.userId);
