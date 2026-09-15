@@ -83,6 +83,8 @@ drop policy if exists "corporate_accounts_members" on public.corporate_accounts;
 drop policy if exists "corporate_accounts_insert" on public.corporate_accounts;
 drop policy if exists "corporate_accounts_read" on public.corporate_accounts;
 drop policy if exists "corporate_accounts_admin" on public.corporate_accounts;
+drop policy if exists "corporate_accounts_update" on public.corporate_accounts;
+drop policy if exists "corporate_accounts_delete" on public.corporate_accounts;
 
 drop policy if exists "corp_members_read" on public.corporate_members;
 drop policy if exists "corp_members_admin" on public.corporate_members;
@@ -102,8 +104,11 @@ create policy "corporate_accounts_insert" on public.corporate_accounts
 create policy "corporate_accounts_read" on public.corporate_accounts
   for select using (public.is_admin() or id in (select public.get_user_corporate_ids()));
 
-create policy "corporate_accounts_admin" on public.corporate_accounts
-  for update, delete using (public.is_admin());
+create policy "corporate_accounts_update" on public.corporate_accounts
+  for update using (public.is_admin());
+
+create policy "corporate_accounts_delete" on public.corporate_accounts
+  for delete using (public.is_admin());
 
 create policy "corporate_members_insert" on public.corporate_members
   for insert with check (
