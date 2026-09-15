@@ -30,7 +30,6 @@ import {
   BOOKINGS as SEED_BOOKINGS,
   POSTS as SEED_POSTS,
   REVIEWS as SEED_REVIEWS,
-  VEHICLES as SEED_VEHICLES,
 } from "./data";
 import { getSupabase } from "./supabase/client";
 import { notifyEmail } from "./postmark/notify-client";
@@ -414,7 +413,7 @@ export const useApp = create<AppState>()(
         })),
 
       hydrated: false,
-      vehicles: SEED_VEHICLES,
+      vehicles: [],
       users: ALL_USERS,
       reviews: SEED_REVIEWS,
       notifications: [],
