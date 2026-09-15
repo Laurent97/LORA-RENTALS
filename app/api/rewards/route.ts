@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin, getCallerProfile } from "@/lib/supabase/admin";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   const sb = getSupabaseAdmin();
   if (!sb) return NextResponse.json({ error: "not configured" }, { status: 500 });

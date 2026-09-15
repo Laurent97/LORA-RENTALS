@@ -4,6 +4,8 @@ import { callLlm } from "@/lib/ai/complete";
 import { CAR_TYPES, RWANDA_LOCATIONS } from "@/lib/constants";
 import type { ParsedSearch } from "@/types";
 
+export const dynamic = "force-dynamic";
+
 // ─── Rule-based parser (always works, no API key needed) ────────────────────
 function parseRules(q: string): ParsedSearch {
   const s = q.toLowerCase();

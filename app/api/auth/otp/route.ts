@@ -3,6 +3,8 @@ import { z } from "zod";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { sendEmail } from "@/lib/postmark/send";
 
+export const dynamic = "force-dynamic";
+
 export const runtime = "nodejs";
 
 // Auth OTPs are generated with the service role via admin.generateLink — which

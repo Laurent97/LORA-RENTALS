@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getCallerProfile, getSupabaseAdmin } from "@/lib/supabase/admin";
 
+export const dynamic = "force-dynamic";
+
 const schema = z.object({
   action: z.enum(["set_role", "verify_kyc", "reject_kyc", "suspend", "restore", "delete"]),
   userId: z.string().uuid(),

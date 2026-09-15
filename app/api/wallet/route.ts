@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { getSupabaseAdmin, getCallerProfile } from "@/lib/supabase/admin";
 import type { Wallet, WalletTransaction } from "@/types";
 
+export const dynamic = "force-dynamic";
+
 const TX_TYPES = ["topup", "refund", "referral", "promo", "payment", "payout"];
 
 function walletFromRow(row: Record<string, unknown>): Wallet {

@@ -5,6 +5,8 @@ import { generateQrDataUrl } from "@/lib/badges/qr";
 import { BRAND } from "@/lib/constants";
 import { dispatchEmailEvent } from "@/lib/postmark/triggers";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(req: Request) {
   const sb = getSupabaseAdmin();
   if (!sb) return NextResponse.json({ error: "not configured" }, { status: 500 });

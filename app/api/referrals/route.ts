@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { getSupabaseAdmin, getCallerProfile } from "@/lib/supabase/admin";
 import type { Referral, ReferralReward } from "@/types";
 
+export const dynamic = "force-dynamic";
+
 const REWARD_TYPES = ["team", "corporate", "owner", "social", "influencer"];
 const REWARD_STATUSES = ["pending", "credited", "cancelled"];
 

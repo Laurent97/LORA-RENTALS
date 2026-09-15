@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin, getCallerProfile } from "@/lib/supabase/admin";
 
+export const dynamic = "force-dynamic";
+
 const BUCKET = "lorarentals";
 
 async function uploadFile(sb: any, userId: string, file: File): Promise<string | null> {

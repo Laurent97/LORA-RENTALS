@@ -4,6 +4,8 @@ import { adminModerateSchema } from "@/lib/reviews/validators";
 import { audit, clientIp, loadReviewBundle, notifyUser } from "@/lib/reviews/server";
 import { dispatchEmailEvent } from "@/lib/postmark/triggers";
 
+export const dynamic = "force-dynamic";
+
 export const runtime = "nodejs";
 
 // POST /api/reviews/admin-hide — ADMIN ONLY moderation actions:

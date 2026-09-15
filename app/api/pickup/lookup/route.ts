@@ -3,6 +3,8 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { bookingFromRow, userFromRow, vehicleFromRow } from "@/lib/supabase/mappers";
 import { bookingRef, normalizeBookingQrInput, parseBookingQrPayload } from "@/lib/utils";
 
+export const dynamic = "force-dynamic";
+
 function isBookingRef(v: string) {
   return /^LRA-[A-F0-9]{6}$/i.test(v);
 }

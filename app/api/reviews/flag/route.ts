@@ -5,6 +5,8 @@ import { REPORT_AUTO_HIDE_THRESHOLD } from "@/lib/reviews/constants";
 import { audit, clientIp, notifyUser } from "@/lib/reviews/server";
 import { dispatchEmailEvent } from "@/lib/postmark/triggers";
 
+export const dynamic = "force-dynamic";
+
 export const runtime = "nodejs";
 
 // POST /api/reviews/flag — customer, owner or admin reports a review.

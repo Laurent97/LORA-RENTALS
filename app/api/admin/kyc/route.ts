@@ -3,6 +3,8 @@ import { z } from "zod";
 import { getCallerProfile, getSupabaseAdmin } from "@/lib/supabase/admin";
 import { dispatchEmailEvent } from "@/lib/postmark/triggers";
 
+export const dynamic = "force-dynamic";
+
 const schema = z.object({
   action: z.enum(["document_approve", "document_reject", "owner_approve", "owner_reject", "request_resubmission"]),
   documentId: z.string().uuid().optional(),

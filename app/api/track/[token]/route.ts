@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { bookingFromRow, vehicleFromRow } from "@/lib/supabase/mappers";
 
+export const dynamic = "force-dynamic";
+
 export const runtime = "nodejs";
 
 // GET /api/track/:token — public endpoint for live trip tracking.

@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 
+export const dynamic = "force-dynamic";
+
 const schema = z.object({
   name: z.string().trim().min(1).max(120),
   phone: z.string().max(40).default(""),

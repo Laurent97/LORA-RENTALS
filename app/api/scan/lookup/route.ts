@@ -3,6 +3,8 @@ import { getSupabaseAdmin, getCallerProfile } from "@/lib/supabase/admin";
 import { bookingFromRow, userFromRow, vehicleFromRow } from "@/lib/supabase/mappers";
 import { normalizeBookingQrInput, parseBookingQrPayload } from "@/lib/utils";
 
+export const dynamic = "force-dynamic";
+
 export async function POST(req: Request) {
   try {
     const sb = getSupabaseAdmin();

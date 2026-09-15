@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { vehicleFromRow } from "@/lib/supabase/mappers";
 
+export const dynamic = "force-dynamic";
+
 // GET /api/public/vehicles — developer API for live fleet inventory.
 // Requires a valid `x-api-key` header.
 export async function GET(req: Request) {

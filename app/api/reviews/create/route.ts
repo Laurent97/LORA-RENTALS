@@ -7,6 +7,8 @@ import { audit, clientIp, notifyUser } from "@/lib/reviews/server";
 import { dispatchEmailEvent } from "@/lib/postmark/triggers";
 import { reviewFromRow } from "@/lib/supabase/mappers";
 
+export const dynamic = "force-dynamic";
+
 export const runtime = "nodejs";
 
 // POST /api/reviews/create — customer leaves a review on a completed booking.

@@ -7,6 +7,8 @@ import { VEHICLES } from "@/lib/data";
 import { CAR_TYPES, RWANDA_DESTINATIONS } from "@/lib/constants";
 import type { CarType, ConciergeMessage, ConciergeRecommendation, ConciergeResponse, Vehicle } from "@/types";
 
+export const dynamic = "force-dynamic";
+
 const DESTINATION_LOCATION: Record<string, string> = {
   "Volcanoes National Park": "Musanze",
   "Lake Kivu": "Rubavu",

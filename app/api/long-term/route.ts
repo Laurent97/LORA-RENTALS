@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { getSupabaseAdmin, getCallerProfile } from "@/lib/supabase/admin";
 import type { LongTermLease } from "@/types";
 
+export const dynamic = "force-dynamic";
+
 const STATUSES = ["draft", "pending", "active", "paused", "cancelled", "completed"];
 
 function fromRow(row: Record<string, unknown>): LongTermLease {

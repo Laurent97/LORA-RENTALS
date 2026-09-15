@@ -7,6 +7,8 @@ import { audit, clientIp, notifyUser } from "@/lib/reviews/server";
 import { dispatchEmailEvent } from "@/lib/postmark/triggers";
 import { replyFromRow } from "@/lib/supabase/mappers";
 
+export const dynamic = "force-dynamic";
+
 export const runtime = "nodejs";
 
 // POST /api/reviews/reply — owner replies to a review on their vehicle (once),

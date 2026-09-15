@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import type { TrustScore } from "@/types";
 
+export const dynamic = "force-dynamic";
+
 const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n));
 
 function tierFromTotal(total: number): TrustScore["tier"] {

@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
+export const dynamic = "force-dynamic";
+
 // Best-effort analytics logging to search_queries. Uses the anon key — the
 // sq_insert RLS policy allows inserts from anyone.
 export async function POST(req: Request) {

@@ -4,6 +4,8 @@ import { signBadgeToken } from "@/lib/badges/security";
 import { generateQrDataUrl } from "@/lib/badges/qr";
 import { BRAND } from "@/lib/constants";
 
+export const dynamic = "force-dynamic";
+
 export const runtime = "nodejs";
 
 export async function POST(req: Request) {

@@ -3,6 +3,8 @@ import { sendEmail } from "@/lib/postmark/send";
 import { isTemplateSlug } from "@/lib/postmark/templates/registry";
 import { getCallerProfile } from "@/lib/supabase/admin";
 
+export const dynamic = "force-dynamic";
+
 export const runtime = "nodejs";
 
 // POST /api/email/send

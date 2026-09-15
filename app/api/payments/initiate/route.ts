@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { buildUSSD, isValidRwandaPhone, normalizeRwandaPhone, type Provider } from "@/lib/ussd/build";
 import { getCallerProfile, getSupabaseAdmin } from "@/lib/supabase/admin";
 
+export const dynamic = "force-dynamic";
+
 const PROVIDERS = new Set<Provider>(["mtn", "airtel", "ekash"]);
 
 export async function POST(request: Request) {

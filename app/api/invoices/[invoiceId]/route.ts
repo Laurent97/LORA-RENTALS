@@ -4,6 +4,8 @@ import { renderInvoice } from "@/lib/documents/invoice";
 import type { DocStatus } from "@/lib/documents/template";
 import { BRAND } from "@/lib/constants";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(_: Request, { params }: { params: { invoiceId: string } }) {
   const sb = getSupabaseAdmin();
   if (!sb) return NextResponse.json({ error: "Server not configured" }, { status: 500 });

@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { dispatchEmailEvent, EMAIL_EVENTS, type EmailEvent } from "@/lib/postmark/triggers";
 import { getCallerProfile } from "@/lib/supabase/admin";
 
+export const dynamic = "force-dynamic";
+
 export const runtime = "nodejs";
 
 // POST /api/email/notify  { event, id, meta? }

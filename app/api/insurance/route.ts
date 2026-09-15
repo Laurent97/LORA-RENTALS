@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { getSupabaseAdmin, getCallerProfile } from "@/lib/supabase/admin";
 import type { InsuranceAddon, RoadsidePlan } from "@/types";
 
+export const dynamic = "force-dynamic";
+
 const TIERS = ["basic", "standard", "premium"];
 const STATUSES = ["available", "unavailable"];
 

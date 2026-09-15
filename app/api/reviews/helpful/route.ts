@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { getCallerProfile, getSupabaseAdmin } from "@/lib/supabase/admin";
 
+export const dynamic = "force-dynamic";
+
 export const runtime = "nodejs";
 
 // POST /api/reviews/helpful { reviewId } — toggle a "helpful" vote.

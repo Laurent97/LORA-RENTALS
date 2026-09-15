@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import webpush from "web-push";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 
+export const dynamic = "force-dynamic";
+
 type SendBody = { title?: unknown; body?: unknown; url?: unknown; endpoint?: unknown };
 
 export async function POST(request: NextRequest) {

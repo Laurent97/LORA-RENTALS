@@ -3,6 +3,8 @@ import { differenceInDays, eachDayOfInterval, format, getDay, parseISO } from "d
 import { getSupabaseAdmin, getCallerProfile } from "@/lib/supabase/admin";
 import type { PricingEstimate, PricingRules } from "@/types";
 
+export const dynamic = "force-dynamic";
+
 function isWeekend(d: Date) {
   const day = getDay(d);
   return day === 0 || day === 6;

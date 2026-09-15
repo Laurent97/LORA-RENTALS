@@ -3,6 +3,8 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { renderReceipt } from "@/lib/documents/receipt";
 import type { DocStatus } from "@/lib/documents/template";
 
+export const dynamic = "force-dynamic";
+
 function isBookingRef(id: string) {
   return /^LRA-[A-F0-9]{6}$/i.test(id);
 }

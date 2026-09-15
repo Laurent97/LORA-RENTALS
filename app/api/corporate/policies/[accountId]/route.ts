@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { getSupabaseAdmin, getCallerProfile } from "@/lib/supabase/admin";
 import type { CorporatePolicies } from "@/types";
 
+export const dynamic = "force-dynamic";
+
 function fromRow(row: Record<string, unknown>): CorporatePolicies {
   return {
     accountId: String(row.account_id ?? ""),

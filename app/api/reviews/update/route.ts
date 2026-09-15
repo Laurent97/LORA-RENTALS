@@ -6,6 +6,8 @@ import { REVIEW_EDIT_WINDOW_DAYS } from "@/lib/reviews/constants";
 import { audit, clientIp } from "@/lib/reviews/server";
 import { reviewFromRow } from "@/lib/supabase/mappers";
 
+export const dynamic = "force-dynamic";
+
 export const runtime = "nodejs";
 
 // POST /api/reviews/update — customer edits their own review.

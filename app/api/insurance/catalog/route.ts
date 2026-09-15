@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 
+export const dynamic = "force-dynamic";
+
 function clean(row: any) {
   return { id: row.id, vehicle_id: row.vehicle_id, make: row.vehicles?.make, model: row.vehicles?.model, year: row.vehicles?.year, type: row.vehicles?.type };
 }

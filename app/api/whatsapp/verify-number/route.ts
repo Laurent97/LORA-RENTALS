@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { normalizeRwandanPhone } from "@/lib/whatsapp/validate";
 
+export const dynamic = "force-dynamic";
+
 export async function POST(req: Request) {
   try {
     const { phone } = await req.json();

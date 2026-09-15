@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 
+export const dynamic = "force-dynamic";
+
 export async function POST(request: Request) {
   const expected = process.env.PAYMENT_WEBHOOK_SECRET;
   if (expected && request.headers.get("x-payment-webhook-secret") !== expected) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

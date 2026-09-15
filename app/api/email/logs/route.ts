@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { getSupabaseAdmin, getCallerProfile } from "@/lib/supabase/admin";
 import { resendFromLog } from "@/lib/postmark/send";
 
+export const dynamic = "force-dynamic";
+
 export const runtime = "nodejs";
 
 async function requireAdmin(req: Request) {

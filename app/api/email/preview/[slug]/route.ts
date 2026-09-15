@@ -3,6 +3,8 @@ import { renderEmail } from "@/lib/postmark/render";
 import { getTemplate, templateSlugs } from "@/lib/postmark/templates/registry";
 import { getCallerProfile } from "@/lib/supabase/admin";
 
+export const dynamic = "force-dynamic";
+
 export const runtime = "nodejs";
 
 // GET /api/email/preview/:slug?locale=rw&format=html|text|json

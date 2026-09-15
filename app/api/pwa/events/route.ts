@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 
+export const dynamic = "force-dynamic";
+
 const EVENT_PATTERN = /^pwa_(install_prompt_shown|install_accepted|install_dismissed|installed|first_launch|standalone_session|push_subscribed)$/;
 
 export async function POST(request: NextRequest) {
