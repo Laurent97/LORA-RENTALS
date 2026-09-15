@@ -15,6 +15,9 @@ import { cn, initials } from "@/lib/utils";
 
 const NAV = [
   { href: "/browse", label: "Browse Cars" },
+  { href: "/features", label: "Features" },
+  { href: "/business", label: "Business" },
+  { href: "/long-term", label: "Long-Term" },
   { href: "/about", label: "About" },
   { href: "/contact", label: "Contact" },
 ];
