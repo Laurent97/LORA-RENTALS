@@ -9,7 +9,7 @@ export async function POST(req: Request) {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
     if (!url || !key) return NextResponse.json({ ok: false });
-    const sb = createClient(url, key);
+    const sb = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
     await sb.from("search_queries").insert({
       user_id: userId ?? null,
       raw_query: rawQuery,
