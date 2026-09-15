@@ -21,9 +21,10 @@ type Driver = {
   licenseNumber: string | null;
   licenseVerified: boolean;
   isAvailable: boolean;
+  isVerified: boolean;
   specialties: string[];
-  rating: number;
-  reviewCount: number;
+  ratingAvg: number;
+  ratingCount: number;
   ownerName: string | null;
 };
 
@@ -73,7 +74,7 @@ export default function ToursPage() {
                     <div className="min-w-0 flex-1">
                       <p className="font-display text-lg font-bold text-gold truncate">{d.fullName}</p>
                       <p className="text-xs text-silver flex items-center gap-1">
-                        <Star className="h-3 w-3" /> {d.rating.toFixed(1)} · {d.reviewCount} reviews
+                        <Star className="h-3 w-3" /> {d.ratingAvg.toFixed(1)} · {d.ratingCount} reviews
                       </p>
                     </div>
                   </div>
@@ -81,7 +82,7 @@ export default function ToursPage() {
 
                 <div className="p-5">
                   <div className="mb-4 flex flex-wrap gap-2">
-                    {d.licenseVerified ? (
+                    {d.isVerified ? (
                       <Badge variant="success" className="capitalize"><Shield className="mr-1 h-3 w-3" /> Verified</Badge>
                     ) : (
                       <Badge variant="warning" className="capitalize"><Shield className="mr-1 h-3 w-3" /> Pending</Badge>

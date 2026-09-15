@@ -30,9 +30,9 @@ import { getSupabase } from "@/lib/supabase/client";
 import { useHydrated, useVehicles } from "@/lib/lookup";
 import { useApp } from "@/lib/store";
 import { buildBookingPickupUrl, buildBookingQrPayload, cn, formatMoney, qrUrl, rentalDays, bookingRef, fmtDate } from "@/lib/utils";
-import type { Booking, PaymentMethod, PaymentPoint } from "@/types";
+import type { Booking, Driver, PaymentMethod, PaymentPoint } from "@/types";
 
-const STEPS = ["Dates & location", "Driver details", "Extras & payment", "Confirmed"];
+const STEPS = ["Dates & location", "Rental mode & driver", "Extras & payment", "Confirmed"];
 
 export default function BookingPage() {
   const { id } = useParams<{ id: string }>();
@@ -56,6 +56,10 @@ export default function BookingPage() {
   const [confirmed, setConfirmed] = useState<Booking | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [usePoints, setUsePoints] = useState(false);
+  const [rentalMode, setRentalMode] = useState<"self_drive" | "with_driver">("self_drive");
+  const [drivers, setDrivers] = useState<Driver[]>([]);
+  const [loadingDrivers, setLoadingDrivers] = useState(false);
+  const [selectedDriver, setSelectedDriver] = useState<Driver | null>(null);
   const hydrated = useHydrated();
 
   useEffect(() => {
@@ -87,6 +91,19 @@ export default function BookingPage() {
     if (user) setDriverName((n) => n || user.name);
   }, [user]);
 
+  useEffect(() => {
+    if (step !== 1 || rentalMode !== "with_driver") return;
+    setLoadingDrivers(true);
+    const home = pickup || "Kigali";
+    void fetch(`/api/drivers?verified=true&available=true&city=${encodeURIComponent(home)}&limit=50`)
+      .then(async (r) => {
+        const data = (await r.json().catch(() => [])) as Driver[];
+        setDrivers(Array.isArray(data) ? data : []);
+      })
+      .catch(() => setDrivers([]))
+      .finally(() => setLoadingDrivers(false));
+  }, [step, rentalMode, pickup]);
+
   const days = useMemo(
     () => (start && end ? rentalDays(start, end) : 0),
     [start, end]
@@ -111,14 +128,22 @@ export default function BookingPage() {
   );
   const subtotal = vehicle.pricePerDay * Math.max(days, 1) + extrasTotal;
   const myPoints = loyalty.find((l) => l.userId === user.id)?.points ?? 0;
-  // 1 point = RWF 10 off — cap at 20% of the subtotal
+  // 1 point = RWF 10 off — cap at 20% of the car subtotal
   const pointsDiscount = usePoints ? Math.min(myPoints * 10, Math.floor(subtotal * 0.2)) : 0;
   const pointsUsed = Math.ceil(pointsDiscount / 10);
-  const total = subtotal - pointsDiscount;
+  const driverSubtotal =
+    rentalMode === "with_driver" && selectedDriver?.dailyRateRwf
+      ? selectedDriver.dailyRateRwf * Math.max(days, 1)
+      : 0;
+  const total = subtotal - pointsDiscount + driverSubtotal;
 
   const canNext =
     step === 0 ? days > 0 && pickup && dropoff :
-    step === 1 ? driverName.trim() && license.trim() && idNumber.trim() :
+    step === 1
+      ? rentalMode === "self_drive"
+        ? driverName.trim() && license.trim() && idNumber.trim()
+        : !!selectedDriver
+      :
     true;
 
   const acknowledgeSafety = async (bookingId?: string) => {
@@ -135,9 +160,9 @@ export default function BookingPage() {
     });
   };
 
-  const confirm = () => {
+  const confirm = async () => {
     setSubmitting(true);
-    setTimeout(() => {
+    setTimeout(async () => {
       const bookingId = crypto.randomUUID();
       const booking: Booking = {
         id: bookingId,
@@ -155,16 +180,50 @@ export default function BookingPage() {
         paymentMethod: payMethod,
         paymentPoint: payPoint,
         paymentConfirmed: false,
+        rentalMode,
         qrCode: bookingRef(bookingId),
         qrToken: crypto.randomUUID(),
         ownerResponseDeadline: new Date(Date.now() + 4 * 3600_000).toISOString(),
-        driverName,
-        driverLicense: license,
+        driverName: rentalMode === "self_drive" ? driverName : selectedDriver?.fullName,
+        driverLicense: rentalMode === "self_drive" ? license : selectedDriver?.licenseNumber,
         driverIdNumber: idNumber,
         createdAt: new Date().toISOString(),
       };
       addBooking(booking);
       if (pointsUsed > 0) redeemPoints(user.id, pointsUsed, booking.id);
+
+      if (rentalMode === "with_driver" && selectedDriver) {
+        await new Promise((r) => setTimeout(r, 500));
+        try {
+          const sb = getSupabase();
+          const session = await sb?.auth.getSession();
+          const res = await fetch("/api/driver-bookings", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${session?.data.session?.access_token ?? ""}`,
+            },
+            body: JSON.stringify({
+              bookingId,
+              driverId: selectedDriver.id,
+              startAt: new Date(`${start}T00:00:00`).toISOString(),
+              endAt: new Date(`${end}T23:59:59`).toISOString(),
+              pickupLocation: pickup,
+              dropoffLocation: dropoff,
+              rateRwf: selectedDriver.dailyRateRwf ?? 0,
+              days: Math.max(days, 1),
+              serviceType: "full_day",
+            }),
+          });
+          if (!res.ok) {
+            const json = await res.json().catch(() => ({ error: "" }));
+            toast.error(json.error || "Could not assign driver");
+          }
+        } catch {
+          toast.error("Driver assignment failed");
+        }
+      }
+
       setConfirmed(booking);
       setStep(3);
       setSubmitting(false);
@@ -232,30 +291,98 @@ export default function BookingPage() {
             </Card>
           )}
 
-          {/* Step 1 — driver details */}
+          {/* Step 1 — rental mode & driver */}
           {step === 1 && (
-            <Card>
-              <CardContent className="space-y-5 p-6">
-                <h2 className="font-display text-xl font-bold">Driver details</h2>
-                <p className="text-sm text-muted-foreground">
-                  Bring the original documents at pickup — the owner verifies them on-site.
-                </p>
-                <div>
-                  <Label className="mb-1.5 block">Driver full name</Label>
-                  <Input value={driverName} onChange={(e) => setDriverName(e.target.value)} placeholder="As on license" />
-                </div>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div>
-                    <Label className="mb-1.5 block">Driving license №</Label>
-                    <Input value={license} onChange={(e) => setLicense(e.target.value)} placeholder="DL-2020-00000" />
+            <div className="space-y-5">
+              <Card>
+                <CardContent className="space-y-4 p-6">
+                  <h2 className="font-display text-xl font-bold">How will you use this car?</h2>
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    {(
+                      [
+                        { v: "self_drive", label: "Self-drive", desc: "You drive the car" },
+                        { v: "with_driver", label: "With a driver", desc: "Hire a LORA chauffeur" },
+                      ] as const
+                    ).map((m) => (
+                      <button
+                        key={m.v}
+                        type="button"
+                        onClick={() => {
+                          setRentalMode(m.v);
+                          setSelectedDriver(null);
+                        }}
+                        className={cn(
+                          "rounded-2xl border-2 p-4 text-left transition",
+                          rentalMode === m.v ? "border-gold bg-gold/10" : "border-border hover:border-navy-300"
+                        )}
+                      >
+                        <p className="font-bold">{m.label}</p>
+                        <p className="text-xs text-muted-foreground">{m.desc}</p>
+                      </button>
+                    ))}
                   </div>
-                  <div>
-                    <Label className="mb-1.5 block">National ID / Passport №</Label>
-                    <Input value={idNumber} onChange={(e) => setIdNumber(e.target.value)} placeholder="1 1999 8 0000000 0 00" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+
+                  {rentalMode === "self_drive" && (
+                    <div className="space-y-4 pt-2">
+                      <p className="text-sm text-muted-foreground">
+                        Bring the original documents at pickup — the owner verifies them on-site.
+                      </p>
+                      <div>
+                        <Label className="mb-1.5 block">Driver full name</Label>
+                        <Input value={driverName} onChange={(e) => setDriverName(e.target.value)} placeholder="As on license" />
+                      </div>
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <div>
+                          <Label className="mb-1.5 block">Driving license №</Label>
+                          <Input value={license} onChange={(e) => setLicense(e.target.value)} placeholder="DL-2020-00000" />
+                        </div>
+                        <div>
+                          <Label className="mb-1.5 block">National ID / Passport №</Label>
+                          <Input value={idNumber} onChange={(e) => setIdNumber(e.target.value)} placeholder="1 1999 8 0000000 0 00" />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {rentalMode === "with_driver" && (
+                <Card>
+                  <CardContent className="p-6">
+                    <h3 className="font-display text-lg font-bold">Choose your chauffeur</h3>
+                    {loadingDrivers ? (
+                      <p className="py-8 text-center text-sm text-muted-foreground">Loading drivers…</p>
+                    ) : drivers.length === 0 ? (
+                      <p className="py-8 text-center text-sm text-muted-foreground">No verified drivers are available for these dates.</p>
+                    ) : (
+                      <div className="mt-4 space-y-3">
+                        {drivers.map((d) => (
+                          <button
+                            key={d.id}
+                            type="button"
+                            onClick={() => setSelectedDriver(d)}
+                            className={cn(
+                              "flex w-full items-center gap-4 rounded-2xl border p-4 text-left transition",
+                              selectedDriver?.id === d.id ? "border-gold bg-gold/10" : "border-border hover:border-navy-300"
+                            )}
+                          >
+                            <div className="relative h-14 w-14 overflow-hidden rounded-full bg-muted">
+                              {d.photoUrl ? <Image src={d.photoUrl} alt="" fill className="object-cover" /> : <span className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">No photo</span>}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="font-semibold">{d.fullName}</p>
+                              <p className="text-xs text-muted-foreground">⭐ {d.ratingAvg} · {d.yearsOfExperience} yrs · {d.languages.join(" · ")}</p>
+                              {d.specialties?.length > 0 && <p className="text-xs text-muted-foreground">{d.specialties.slice(0, 3).join(" · ")}</p>}
+                              <p className="text-sm font-bold text-navy-800 dark:text-gold">{formatMoney(d.dailyRateRwf ?? 0, currency)}/day</p>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+            </div>
           )}
 
           {/* Step 2 — extras & payment */}
@@ -412,6 +539,17 @@ export default function BookingPage() {
                     <QrCode className="h-3.5 w-3.5" /> Show at pickup
                   </p>
                 </div>
+                {confirmed.rentalMode === "with_driver" && selectedDriver && (
+                  <div className="mx-auto mt-4 w-fit rounded-2xl border border-gold/30 bg-navy-50 p-4 text-left dark:bg-navy-900/20">
+                    <p className="text-xs font-bold uppercase text-gold">Your chauffeur</p>
+                    <p className="font-semibold">{selectedDriver.fullName}</p>
+                    <p className="text-xs text-muted-foreground">⭐ {selectedDriver.ratingAvg} · {selectedDriver.yearsOfExperience} yrs</p>
+                    <p className="text-xs text-muted-foreground">{selectedDriver.languages.join(" · ")}</p>
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      Phone will be shown once the driver confirms.
+                    </p>
+                  </div>
+                )}
                 <div className="mt-6 flex flex-wrap justify-center gap-3">
                   <Link href="/dashboard/bookings">
                     <Button variant="gold">View my bookings</Button>
@@ -468,6 +606,12 @@ export default function BookingPage() {
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Extras</span>
                     <span className="font-medium">{formatMoney(extrasTotal, currency)}</span>
+                  </div>
+                )}
+                {rentalMode === "with_driver" && driverSubtotal > 0 && selectedDriver && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Driver — {selectedDriver.fullName}</span>
+                    <span className="font-medium">{formatMoney(driverSubtotal, currency)}</span>
                   </div>
                 )}
                 <div className="flex justify-between">
