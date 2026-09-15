@@ -2,9 +2,10 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { CalendarDays, Download, MapPin, QrCode, Share2, Star, XCircle } from "lucide-react";
+import { CalendarDays, Download, MapPin, Phone, QrCode, Share2, Star, XCircle } from "lucide-react";
+import { getSupabase } from "@/lib/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -34,7 +35,32 @@ export default function MyBookingsPage() {
   const vehicles = useVehicles();
   const [tab, setTab] = useState("upcoming");
   const [qrBooking, setQrBooking] = useState<Booking | null>(null);
+  const [driverBookings, setDriverBookings] = useState<{ bookingId: string; status: string; driverName: string; phone: string | null; whatsapp: string | null; photoUrl: string | null }[]>([]);
   if (!user) return null;
+
+  useEffect(() => {
+    const sb = getSupabase();
+    sb?.auth.getSession().then((s) => {
+      fetch("/api/driver-bookings?as=customer", {
+        headers: { Authorization: `Bearer ${s.data.session?.access_token ?? ""}` },
+      })
+        .then(async (r) => {
+          const data = (await r.json().catch(() => [])) as any[];
+          if (!Array.isArray(data)) return;
+          setDriverBookings(
+            data.map((x) => ({
+              bookingId: String(x.bookingId),
+              status: String(x.status),
+              driverName: x.driver?.fullName ?? "Driver",
+              phone: x.driver?.phone ?? null,
+              whatsapp: x.driver?.whatsapp ?? null,
+              photoUrl: x.driver?.photoUrl ?? null,
+            }))
+          );
+        })
+        .catch(() => {});
+    });
+  }, [user?.id]);
 
   const mine = bookings.filter((b) => b.customerId === user.id);
   const list = mine.filter(GROUPS[tab]);
@@ -102,6 +128,24 @@ export default function MyBookingsPage() {
                             <div className="mt-4">
                               <TripTimeline booking={b} />
                             </div>
+                            {(() => {
+                              const db = b.rentalMode === "with_driver" ? driverBookings.find((d) => d.bookingId === b.id) : null;
+                              if (!db) return null;
+                              return (
+                                <div className="mt-3 rounded-xl bg-navy-50 p-3 text-sm dark:bg-navy-900/20">
+                                  <p className="font-semibold text-navy-800 dark:text-gold">Chauffeur: {db.driverName}</p>
+                                  {db.status === "confirmed" || db.status === "in_progress" || db.status === "completed" ? (
+                                    <p className="flex items-center gap-1 text-muted-foreground">
+                                      <Phone className="h-3 w-3" />
+                                      <a href={`tel:${db.phone?.replace(/\s/g, "")}`} className="underline">{db.phone}</a>
+                                      {db.whatsapp && <span className="text-xs">· WhatsApp: {db.whatsapp}</span>}
+                                    </p>
+                                  ) : (
+                                    <p className="text-xs text-muted-foreground">Driver will confirm shortly. Phone revealed once confirmed.</p>
+                                  )}
+                                </div>
+                              );
+                            })()}
                           </div>
                           <div className="text-right">
                             <p className="font-display text-lg font-extrabold text-navy-800 dark:text-gold">
