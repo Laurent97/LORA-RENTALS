@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin, getCallerProfile } from "@/lib/supabase/admin";
+import { dispatchEmailEvent } from "@/lib/postmark/triggers";
 
 export async function GET(req: Request) {
   try {
@@ -150,6 +151,14 @@ export async function POST(req: Request) {
     }).select().single();
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+    await dispatchEmailEvent({
+      event: "driver.new_request",
+      id: driverId,
+      actor: { id: caller.id, role: caller.role },
+      meta: { driverId, booking: bookingId },
+    });
+
     return NextResponse.json({ ok: true, driverBooking: data });
   } catch (err) {
     console.error("[driver-bookings] error:", err);
@@ -168,7 +177,7 @@ export async function PATCH(req: Request) {
     const { id, status } = (await req.json().catch(() => ({}))) as { id?: string; status?: string };
     if (!id || !status) return NextResponse.json({ error: "id and status required" }, { status: 400 });
 
-    const { data: existing } = await sb.from("driver_bookings").select("id, driver_id, status, driver_net_rwf, driver_booking_id").eq("id", id).single();
+    const { data: existing } = await sb.from("driver_bookings").select("id, driver_id, status, driver_net_rwf, booking_id").eq("id", id).single();
     if (!existing) return NextResponse.json({ error: "not found" }, { status: 404 });
 
     // resolve driver from user
@@ -202,6 +211,33 @@ export async function PATCH(req: Request) {
 
     const { data, error } = await sb.from("driver_bookings").update(patch).eq("id", id).select().single();
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+    if (status === "confirmed") {
+      await dispatchEmailEvent({
+        event: "driver.request_confirmed",
+        id,
+        actor: { id: caller.id, role: caller.role },
+        meta: { driverId: existing.driver_id, booking: existing.booking_id },
+      });
+    }
+
+    if (status === "completed" && data) {
+      const { data: avail } = await sb.from("driver_earnings").select("amount_rwf").eq("driver_id", existing.driver_id).eq("status", "available");
+      const totalAvailable = (avail ?? []).reduce((s, r: any) => s + Number(r.amount_rwf ?? 0), 0);
+      await dispatchEmailEvent({
+        event: "driver.trip_completed",
+        id,
+        actor: { id: caller.id, role: caller.role },
+        meta: { driverId: existing.driver_id, booking: existing.booking_id },
+      });
+      await dispatchEmailEvent({
+        event: "driver.earnings_credited",
+        id,
+        actor: { id: caller.id, role: caller.role },
+        meta: { driverId: existing.driver_id, amount_rwf: data.driver_net_rwf, total_available_rwf: totalAvailable, earning: existing.id },
+      });
+    }
+
     return NextResponse.json({ ok: true, driverBooking: data });
   } catch (err) {
     console.error("[driver-bookings PATCH] error:", err);

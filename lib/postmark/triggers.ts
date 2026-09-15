@@ -27,6 +27,11 @@ export const EMAIL_EVENTS = [
   "sos.created",
   "inspection.created",
   "corporate.approved",
+  "driver.kyc_approved",
+  "driver.new_request",
+  "driver.request_confirmed",
+  "driver.trip_completed",
+  "driver.earnings_credited",
   "referral.rewarded",
   "review.request",
   "review.published",
@@ -279,6 +284,74 @@ export async function dispatchEmailEvent(input: TriggerInput): Promise<TriggerRe
     const slug = i.type === "pickup" ? "inspection-pickup-report" : "inspection-return-report";
     if (can(customer)) await push({ to: customer!.email, templateSlug: slug, data: d, userId: customer!.id, locale: locale(customer), idempotencyKey: `${slug}:${i.id}:c` });
     if (can(owner)) await push({ to: owner!.email, templateSlug: slug, data: { ...d, first_name: first(owner!.name) }, userId: owner!.id, locale: locale(owner), idempotencyKey: `${slug}:${i.id}:o` });
+    return { ok: true, sent };
+  }
+
+  // ── Drivers ──────────────────────────────────────────────────────────────────
+  if (event.startsWith("driver.")) {
+    const driverId = meta.driverId as string | undefined;
+    if (!driverId) return { ok: false, sent, reason: "driverId missing in meta" };
+    const { data: d } = await sb.from("drivers").select("*").eq("id", driverId).maybeSingle();
+    if (!d) return { ok: false, sent, reason: "Driver not found" };
+    const owner = await loadUser(sb, d.owner_id);
+    if (!owner) return { ok: false, sent, reason: "Driver user not found" };
+
+    const base = {
+      first_name: first(owner.name),
+      driver_name: d.full_name ?? owner.name,
+      driver_phone: d.phone ?? owner.phone ?? "—",
+      driver_url: url("/driver"),
+      earnings_url: url("/driver/earnings"),
+    };
+
+    switch (event) {
+      case "driver.kyc_approved": {
+        if (can(owner)) await push({ to: owner.email, templateSlug: "driver-kyc-approved", data: base, userId: owner.id, locale: locale(owner), idempotencyKey: `driver-kyc-approved:${driverId}` });
+        break;
+      }
+      case "driver.new_request": {
+        const b = meta.booking ? (await loadBookingBundle(sb, meta.booking as string)) : null;
+        if (can(owner) && b) {
+          const days = Math.max(1, rentalDays(b.booking.startDate, b.booking.endDate));
+          const dData = {
+            ...base,
+            customer_name: b.customer?.name ?? "Customer",
+            customer_phone: b.customer?.phone ?? "—",
+            pickup_date: fmtDateTime(b.booking.startDate),
+            return_date: fmtDateTime(b.booking.endDate),
+            pickup_location: b.booking.pickupLocation,
+            car_name: b.vehicle ? `${b.vehicle.make} ${b.vehicle.model} ${b.vehicle.year}` : "Vehicle",
+            total_rwf: (d.daily_rate_rwf ?? 0) * days,
+          };
+          await push({ to: owner.email, templateSlug: "driver-new-request", data: dData, userId: owner.id, locale: locale(owner), idempotencyKey: `driver-new-request:${driverId}:${meta.booking}` });
+        }
+        break;
+      }
+      case "driver.request_confirmed": {
+        const b = meta.booking ? (await loadBookingBundle(sb, meta.booking as string)) : null;
+        if (b && b.customer && can(b.customer)) {
+          const c = b.customer;
+          await push({ to: c.email, templateSlug: "driver-request-confirmed", data: { first_name: first(c.name), driver_name: d.full_name ?? owner.name, driver_phone: d.phone ?? owner.phone ?? "—", pickup_date: fmtDateTime(b.booking.startDate), pickup_location: b.booking.pickupLocation, car_name: `${b.vehicle?.make ?? ""} ${b.vehicle?.model ?? ""} ${b.vehicle?.year ?? ""}`.trim(), booking_url: url("/dashboard/bookings") }, userId: c.id, locale: locale(c), idempotencyKey: `driver-request-confirmed:${meta.booking}` });
+        }
+        break;
+      }
+      case "driver.trip_completed": {
+        const b = meta.booking ? (await loadBookingBundle(sb, meta.booking as string)) : null;
+        if (b && b.customer && can(b.customer)) {
+          const c = b.customer;
+          await push({ to: c.email, templateSlug: "driver-trip-completed", data: { first_name: first(c.name), driver_name: d.full_name ?? owner.name, car_name: `${b.vehicle?.make ?? ""} ${b.vehicle?.model ?? ""} ${b.vehicle?.year ?? ""}`.trim(), review_url: url(`/dashboard/bookings/${b.booking.id}/review`) }, userId: c.id, locale: locale(c), idempotencyKey: `driver-trip-completed:${meta.booking}` });
+        }
+        break;
+      }
+      case "driver.earnings_credited": {
+        const amount = Number(meta.amount_rwf ?? 0);
+        const available = Number(meta.total_available_rwf ?? 0);
+        if (can(owner)) {
+          await push({ to: owner.email, templateSlug: "driver-earnings-credited", data: { ...base, amount_rwf: amount, total_available_rwf: available }, userId: owner.id, locale: locale(owner), idempotencyKey: `driver-earnings-credited:${driverId}:${meta.earning}` });
+        }
+        break;
+      }
+    }
     return { ok: true, sent };
   }
 

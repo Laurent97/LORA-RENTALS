@@ -30,6 +30,7 @@ export type TemplateCategory =
   | "disputes"
   | "inspections"
   | "corporate"
+  | "drivers"
   | "marketing"
   | "reviews";
 

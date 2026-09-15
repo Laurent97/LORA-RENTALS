@@ -3,6 +3,7 @@ import { getSupabaseAdmin, getCallerProfile } from "@/lib/supabase/admin";
 import { signBadgeToken } from "@/lib/badges/security";
 import { generateQrDataUrl } from "@/lib/badges/qr";
 import { BRAND } from "@/lib/constants";
+import { dispatchEmailEvent } from "@/lib/postmark/triggers";
 
 export async function GET(req: Request) {
   const sb = getSupabaseAdmin();
@@ -87,6 +88,11 @@ export async function PATCH(req: Request) {
 
   const { error } = await sb.from("drivers").update(update).eq("id", id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  if (action === "approve") {
+    await dispatchEmailEvent({ event: "driver.kyc_approved", id, actor: { id: caller.id, role: caller.role }, meta: { driverId: id } });
+  }
+
   return NextResponse.json({ success: true });
 }
 

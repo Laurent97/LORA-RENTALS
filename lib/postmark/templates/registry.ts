@@ -4,6 +4,7 @@ import { payments } from "./payments";
 import { owner } from "./owner";
 import { loyalty } from "./loyalty";
 import { admin } from "./admin";
+import { drivers } from "./drivers";
 import { disputes } from "./disputes";
 import { inspections } from "./inspections";
 import { corporate } from "./corporate";
@@ -18,6 +19,7 @@ export const templates = {
   ...owner,
   ...loyalty,
   ...admin,
+  ...drivers,
   ...disputes,
   ...inspections,
   ...corporate,
