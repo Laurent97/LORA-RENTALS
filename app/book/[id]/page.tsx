@@ -138,8 +138,9 @@ export default function BookingPage() {
   const confirm = () => {
     setSubmitting(true);
     setTimeout(() => {
+      const bookingId = crypto.randomUUID();
       const booking: Booking = {
-        id: crypto.randomUUID(),
+        id: bookingId,
         customerId: user.id,
         vehicleId: vehicle.id,
         ownerId: vehicle.ownerId,
@@ -154,7 +155,7 @@ export default function BookingPage() {
         paymentMethod: payMethod,
         paymentPoint: payPoint,
         paymentConfirmed: false,
-        qrCode: `LRA-${Date.now().toString(36).toUpperCase()}`,
+        qrCode: bookingRef(bookingId),
         qrToken: crypto.randomUUID(),
         ownerResponseDeadline: new Date(Date.now() + 4 * 3600_000).toISOString(),
         driverName,

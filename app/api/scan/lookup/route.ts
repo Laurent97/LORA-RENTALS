@@ -2,10 +2,6 @@ import { NextResponse } from "next/server";
 import { getSupabaseAdmin, getCallerProfile } from "@/lib/supabase/admin";
 import { bookingFromRow, userFromRow, vehicleFromRow } from "@/lib/supabase/mappers";
 
-function isBookingRef(v: string) {
-  return /^LRA-[A-F0-9]{6}$/i.test(v);
-}
-
 export async function POST(req: Request) {
   try {
     const sb = getSupabaseAdmin();
@@ -31,20 +27,11 @@ export async function POST(req: Request) {
       token = token.slice(5);
     }
 
-    let q = sb
+    const q = sb
       .from("bookings")
       .select("*, vehicles(*), customer:users!customer_id(*), owner:users!owner_id(*)")
-      .or(`qr_token.eq.${token},qr_code.eq.${token}`)
+      .or(`qr_token.eq.${token},qr_code.ilike.${token}`)
       .maybeSingle();
-
-    if (isBookingRef(token)) {
-      const prefix = token.split("-")[1]?.toLowerCase() ?? "";
-      q = sb
-        .from("bookings")
-        .select("*, vehicles(*), customer:users!customer_id(*), owner:users!owner_id(*)")
-        .filter("id::text", "ilike", `${prefix}%`)
-        .maybeSingle();
-    }
 
     const { data: row, error } = await q;
     if (error) {
