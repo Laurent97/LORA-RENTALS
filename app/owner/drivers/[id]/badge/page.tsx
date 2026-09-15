@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useApp } from "@/lib/store";
 import { getSupabase } from "@/lib/supabase/client";
+import { BRAND } from "@/lib/constants";
 import { fmtDate } from "@/lib/utils";
 
 interface DriverRow {
@@ -141,6 +142,8 @@ export default function OwnerDriverBadgePage() {
           .label { color: #D4AF37; font-weight: 600; }
           .qr-wrap { background: #fff; border-radius: 8px; padding: 12px; text-align: center; }
           .qr { width: 160px; height: 160px; }
+          .footer { text-align: center; font-size: 11px; color: #C0C6CC; text-transform: uppercase; letter-spacing: 1px; padding: 12px 0; border-top: 1px solid rgba(212,175,55,0.4); margin-top: 8px; }
+          .footer a { color: #C0C6CC; text-decoration: none; }
         </style>
       </head>
       <body>
@@ -166,6 +169,10 @@ export default function OwnerDriverBadgePage() {
               <p class="field"><span class="label">Issued:</span> ${badge ? fmtDate(badge.issued_at) : "—"} · <span class="label">Expires:</span> ${badge ? fmtDate(badge.expires_at) : "—"}</p>
             </div>
             ${badge?.qr_url ? `<div class="qr-wrap"><img class="qr" src="${badge.qr_url}" alt="QR" /></div>` : ""}
+            <div class="footer">
+              <p>${BRAND.siteUrl}</p>
+              <p>${BRAND.supportEmail} · ${BRAND.phone}</p>
+            </div>
           </div>
         </div>
         <script>window.addEventListener("load", () => setTimeout(() => window.print(), 300));</script>
@@ -279,6 +286,10 @@ export default function OwnerDriverBadgePage() {
                 No QR code yet. Generate a badge to preview it here.
               </div>
             )}
+            <div className="border-t border-gold/30 pt-3 text-center text-[10px] uppercase tracking-wider text-silver">
+              <p>{BRAND.siteUrl}</p>
+              <p>{BRAND.supportEmail} · {BRAND.phone}</p>
+            </div>
           </CardContent>
         </Card>
       </div>
