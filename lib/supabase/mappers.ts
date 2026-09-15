@@ -96,6 +96,11 @@ export const vehicleFromRow = (r: any): Vehicle => ({
   paymentMethods: r.payment_methods ?? ["cash", "momo", "card"],
   airportApproved: r.airport_approved ?? false,
   country: r.country ?? "RW",
+  rentalMode: r.rental_mode ?? "self_drive",
+  driverId: r.driver_id ?? undefined,
+  priceSelfDriveRwf: r.price_self_drive_rwf ?? undefined,
+  priceWithDriverRwf: r.price_with_driver_rwf ?? undefined,
+  driverIncludedDailyFee: r.driver_included_daily_fee ?? 0,
   createdAt: r.created_at,
 });
 
@@ -126,6 +131,11 @@ export const vehicleToRow = (v: Vehicle) => ({
   payment_methods: v.paymentMethods,
   airport_approved: v.airportApproved,
   country: v.country ?? "RW",
+  rental_mode: v.rentalMode ?? "self_drive",
+  driver_id: v.driverId ?? null,
+  price_self_drive_rwf: v.priceSelfDriveRwf ?? null,
+  price_with_driver_rwf: v.priceWithDriverRwf ?? null,
+  driver_included_daily_fee: v.driverIncludedDailyFee ?? 0,
 });
 
 export const bookingFromRow = (r: any): Booking => ({
@@ -155,9 +165,17 @@ export const bookingFromRow = (r: any): Booking => ({
   ownerRespondedAt: r.owner_responded_at ?? undefined,
   pointsRedeemed: r.points_redeemed ?? 0,
   pointsEarned: r.points_earned ?? 0,
-  corporateAccountId: r.corporate_account_id ?? undefined,
+  corporateAccountId: r.corporate_account_id ?? r.corporate_id ?? undefined,
+  corporateId: r.corporate_id ?? undefined,
+  costCenterId: r.cost_center_id ?? undefined,
   costCenter: r.cost_center ?? undefined,
   poNumber: r.po_number ?? undefined,
+  bookedByUserId: r.booked_by_user_id ?? undefined,
+  approvalStatus: r.approval_status ?? "not_required",
+  approvedBy: r.approved_by ?? undefined,
+  approvedAt: r.approved_at ?? undefined,
+  paymentType: r.payment_type ?? "on_pickup",
+  rentalMode: r.rental_mode ?? undefined,
   country: r.country ?? "RW",
   createdAt: r.created_at,
 });
@@ -189,9 +207,16 @@ export const bookingToRow = (b: Booking) => ({
   owner_responded_at: b.ownerRespondedAt ?? null,
   points_redeemed: b.pointsRedeemed ?? 0,
   points_earned: b.pointsEarned ?? 0,
-  corporate_account_id: b.corporateAccountId ?? null,
+  corporate_id: b.corporateId ?? b.corporateAccountId ?? null,
+  cost_center_id: b.costCenterId ?? null,
   cost_center: b.costCenter ?? null,
   po_number: b.poNumber ?? null,
+  booked_by_user_id: b.bookedByUserId ?? null,
+  approval_status: b.approvalStatus ?? "not_required",
+  approved_by: b.approvedBy ?? null,
+  approved_at: b.approvedAt ?? null,
+  payment_type: b.paymentType ?? "on_pickup",
+  rental_mode: b.rentalMode ?? null,
   country: b.country ?? "RW",
 });
 

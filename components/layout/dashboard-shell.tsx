@@ -23,6 +23,9 @@ const ROLE_LABEL: Record<UserRole, string> = {
   customer: "Customer",
   owner: "Car Owner",
   admin: "Super Admin",
+  corporate_admin: "Corporate Admin",
+  corporate_manager: "Corporate Manager",
+  corporate_member: "Corporate Member",
 };
 
 export function DashboardShell({
@@ -43,8 +46,8 @@ export function DashboardShell({
     if (!authReady) return;
     if (!user) router.replace("/login");
     else if (user.role !== role) {
-      const dest = { customer: "/dashboard", owner: "/owner", admin: "/admin" }[user.role];
-      router.replace(dest);
+      const dest: Record<UserRole, string> = { customer: "/dashboard", owner: "/owner", admin: "/admin", corporate_admin: "/corporate", corporate_manager: "/corporate", corporate_member: "/corporate" };
+      router.replace(dest[user.role]);
     }
   }, [authReady, user, role, router]);
 

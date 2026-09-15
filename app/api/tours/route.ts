@@ -19,16 +19,25 @@ function tourFromRow(row: Record<string, unknown>): Tour {
   };
 }
 
-function driverFromRow(row: Record<string, unknown>): Driver {
+function driverFromRow(row: Record<string, unknown>, fullName = ""): Driver {
   return {
     id: String(row.id ?? ""),
-    userId: String(row.user_id ?? ""),
+    ownerId: String(row.user_id ?? ""),
+    fullName,
+    phone: String(row.phone ?? ""),
+    whatsapp: row.whatsapp ? String(row.whatsapp) : undefined,
+    email: row.email ? String(row.email) : undefined,
     bio: row.bio ? String(row.bio) : undefined,
     languages: (row.languages as string[]) ?? [],
-    licenseVerified: Boolean(row.license_verified ?? false),
-    rating: Number(row.rating ?? 0),
-    reviewCount: Number(row.review_count ?? 0),
+    backgroundCheckStatus: row.license_verified ? "approved" : "pending",
+    yearsOfExperience: Number(row.years_of_experience ?? 0),
+    specialties: (row.specialties as string[]) ?? [],
+    ratingAvg: Number(row.rating ?? 0),
+    ratingCount: Number(row.review_count ?? 0),
+    isAvailable: Boolean(row.is_available ?? true),
+    isVerified: Boolean(row.license_verified ?? false),
     createdAt: String(row.created_at ?? new Date().toISOString()),
+    updatedAt: String(row.updated_at ?? row.created_at ?? new Date().toISOString()),
   };
 }
 
@@ -46,7 +55,7 @@ export async function GET() {
   const driverRows = dRows ?? [];
   const userRows = uRows ?? [];
 
-  const drivers = new Map(driverRows.map((d) => [d.id, { ...driverFromRow(d), name: userRows.find((u) => u.id === d.user_id)?.name ?? "", avatar: userRows.find((u) => u.id === d.user_id)?.avatar }]));
+  const drivers = new Map(driverRows.map((d) => [d.id, driverFromRow(d, userRows.find((u) => u.id === d.user_id)?.name ?? "")]));
   const tours = tourRows.map((t) => ({ ...tourFromRow(t), driver: drivers.get(t.driver_id) }));
 
   return NextResponse.json(tours);

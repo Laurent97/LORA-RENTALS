@@ -1,6 +1,6 @@
 // ─── LORA RENTALS LTD — Core Domain Types (Supabase-ready) ───────────────────
 
-export type UserRole = "customer" | "owner" | "admin";
+export type UserRole = "customer" | "owner" | "admin" | "corporate_admin" | "corporate_manager" | "corporate_member";
 export type KycStatus = "pending" | "verified" | "rejected" | "none";
 export type VehicleStatus = "available" | "unavailable" | "maintenance" | "pending_approval";
 export type BookingStatus =
@@ -81,6 +81,12 @@ export interface Vehicle {
   paymentMethods: PaymentMethod[];
   airportApproved: boolean;
   country?: string;
+  rentalMode?: "self_drive" | "with_driver" | "both";
+  driverId?: string;
+  priceSelfDriveRwf?: number;
+  priceWithDriverRwf?: number;
+  driverIncludedDailyFee?: number;
+  driver?: Driver;
   createdAt: string;
 }
 
@@ -118,8 +124,16 @@ export interface Booking {
   pointsRedeemed?: number;
   pointsEarned?: number;
   corporateAccountId?: string;
+  corporateId?: string;
+  costCenterId?: string;
   costCenter?: string;
   poNumber?: string;
+  bookedByUserId?: string;
+  approvalStatus?: "not_required" | "pending" | "approved" | "rejected";
+  approvedBy?: string;
+  approvedAt?: string;
+  paymentType?: "on_pickup" | "invoice";
+  rentalMode?: "self_drive" | "with_driver";
   country?: string;
   createdAt: string;
 }
@@ -543,17 +557,6 @@ export interface LongTermLease {
   updatedAt: string;
 }
 
-export interface Driver {
-  id: string;
-  userId: string;
-  bio?: string;
-  languages: string[];
-  licenseVerified: boolean;
-  rating: number;
-  reviewCount: number;
-  createdAt: string;
-}
-
 export interface Tour {
   id: string;
   driverId: string;
@@ -803,3 +806,51 @@ export interface CarbonOffset {
 }
 
 export type Locale = "en" | "rw" | "fr";
+
+export type RentalMode = "self_drive" | "with_driver" | "both";
+export type DriverGender = "male" | "female" | "other";
+export type DriverBackgroundCheckStatus = "pending" | "approved" | "rejected";
+
+export interface Driver {
+  id: string;
+  ownerId: string;
+  fullName: string;
+  phone?: string;
+  whatsapp?: string;
+  email?: string;
+  dateOfBirth?: string;
+  gender?: DriverGender;
+  nationality?: string;
+  city?: string;
+  languages: string[];
+  photoUrl?: string;
+  passportPhotoUrl?: string;
+  licenseNumber?: string;
+  licensePhotoUrl?: string;
+  licenseExpiry?: string;
+  nationalIdUrl?: string;
+  backgroundCheckStatus: DriverBackgroundCheckStatus;
+  yearsOfExperience: number;
+  bio?: string;
+  specialties: string[];
+  ratingAvg: number;
+  ratingCount: number;
+  isAvailable: boolean;
+  isVerified: boolean;
+  verifiedAt?: string;
+  verifiedBy?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DriverReview {
+  id: string;
+  driverId: string;
+  bookingId?: string;
+  customerId?: string;
+  rating: number;
+  comment?: string;
+  tags: string[];
+  status: "published" | "hidden" | "removed";
+  createdAt: string;
+}
