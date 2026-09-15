@@ -10,8 +10,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { StatusBadge } from "@/components/status-badge";
 import { useApp } from "@/lib/store";
+import { getSupabase } from "@/lib/supabase/client";
 import { bookingRef, fmtDate, parseBookingQrPayload } from "@/lib/utils";
-import type { Booking } from "@/types";
+import type { Booking, User, Vehicle } from "@/types";
 
 // BarcodeDetector is built into Chromium; we degrade to manual entry elsewhere.
 declare class BarcodeDetector {
@@ -24,11 +25,13 @@ type Phase = "idle" | "scanning" | "found" | "done";
 
 export default function ScanPage() {
   const router = useRouter();
-  const { user, bookings, vehicles, users, confirmPickup } = useApp();
+  const { user, confirmPickup } = useApp();
   const [phase, setPhase] = useState<Phase>("idle");
   const [manual, setManual] = useState(false);
   const [code, setCode] = useState("");
   const [found, setFound] = useState<Booking | null>(null);
+  const [foundVehicle, setFoundVehicle] = useState<Vehicle | null>(null);
+  const [foundCustomer, setFoundCustomer] = useState<User | null>(null);
   const [error, setError] = useState("");
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -48,7 +51,7 @@ export default function ScanPage() {
     if (!user) router.replace("/login?next=/scan");
   }, [user, router]);
 
-  const lookup = (raw: string) => {
+  const lookup = async (raw: string) => {
     const token = raw.trim();
     // QR encodes "LORA|1|<token>|<details...>" or legacy "LORA:<token>"
     let key = token;
@@ -58,23 +61,43 @@ export default function ScanPage() {
     } else if (token.startsWith("LORA:")) {
       key = token.slice(5);
     }
-    const b = bookings.find(
-      (x) => x.qrToken === key || x.qrCode === key || x.id === key || bookingRef(x.id) === key.toUpperCase()
-    );
-    if (!b) {
-      setError("No booking matches that code. Check and try again.");
-      setFound(null);
-      return;
-    }
-    if (user?.role === "owner" && b.ownerId !== user.id) {
-      setError("This booking isn't for one of your vehicles.");
-      setFound(null);
-      return;
-    }
+
     setError("");
-    setFound(b);
-    setPhase("found");
-    stopCamera();
+    try {
+      const sb = getSupabase();
+      const session = await sb?.auth.getSession();
+      const res = await fetch("/api/scan/lookup", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session?.data.session?.access_token ?? ""}`,
+        },
+        body: JSON.stringify({ code: token }),
+      });
+      const json = (await res.json().catch(() => ({}))) as {
+        booking?: Booking;
+        vehicle?: Vehicle;
+        customer?: User;
+        error?: string;
+      };
+      if (!res.ok || !json.booking) {
+        setError(json.error ?? "No booking matches that code. Check and try again.");
+        setFound(null);
+        setFoundVehicle(null);
+        setFoundCustomer(null);
+        return;
+      }
+      setFound(json.booking);
+      setFoundVehicle(json.vehicle ?? null);
+      setFoundCustomer(json.customer ?? null);
+      setPhase("found");
+      stopCamera();
+    } catch {
+      setError("Network error. Try again.");
+      setFound(null);
+      setFoundVehicle(null);
+      setFoundCustomer(null);
+    }
   };
 
   const startCamera = async () => {
@@ -101,7 +124,7 @@ export default function ScanPage() {
           try {
             const codes = await detector.detect(videoRef.current);
             if (codes.length) {
-              lookup(codes[0].rawValue);
+              void lookup(codes[0].rawValue);
               return;
             }
           } catch {
@@ -137,8 +160,8 @@ export default function ScanPage() {
     );
   }
 
-  const vehicle = found ? vehicles.find((v) => v.id === found.vehicleId) : null;
-  const customer = found ? users.find((u) => u.id === found.customerId) : null;
+  const vehicle = foundVehicle;
+  const customer = foundCustomer;
 
   return (
     <main className="container max-w-md py-10">
@@ -229,7 +252,7 @@ export default function ScanPage() {
                     placeholder="LRA-XXXXXX or QR token"
                     onKeyDown={(e) => e.key === "Enter" && lookup(code)}
                   />
-                  <Button onClick={() => lookup(code)}>Find</Button>
+                  <Button onClick={() => void lookup(code)}>Find</Button>
                 </div>
               </div>
             )}
