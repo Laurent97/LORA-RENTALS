@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -24,6 +25,7 @@ import { CarCard } from "@/components/car-card";
 import { Rating } from "@/components/rating";
 import { TESTIMONIALS } from "@/lib/data";
 import { useVehicles } from "@/lib/lookup";
+import { useApp } from "@/lib/store";
 import { BRAND, RWANDA_LOCATIONS } from "@/lib/constants";
 
 const TRUST = [
@@ -40,9 +42,14 @@ const STEPS = [
 ];
 
 export default function HomePage() {
+  const { hydrated, hydrate } = useApp((s) => ({ hydrated: s.hydrated, hydrate: s.hydrate }));
   const featured = useVehicles()
     .filter((v) => v.status === "available" && v.verified && v.featured)
     .slice(0, 6);
+
+  useEffect(() => {
+    if (!hydrated) void hydrate();
+  }, [hydrated, hydrate]);
 
   return (
     <main>
