@@ -16,6 +16,11 @@ export function getSupabase(): SupabaseClient | null {
       client = createClient(url, key, {
         auth: { persistSession: true, autoRefreshToken: true },
       });
+      if (!client || !client.auth) {
+        console.error("[getSupabase] created client is missing auth");
+        client = null;
+        return null;
+      }
     } catch (err) {
       console.error("[getSupabase] failed to create client:", err);
       return null;

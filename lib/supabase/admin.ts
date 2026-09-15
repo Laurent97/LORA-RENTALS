@@ -11,6 +11,11 @@ export function getSupabaseAdmin(): SupabaseClient | null {
   if (!client) {
     try {
       client = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
+      if (!client || !client.auth) {
+        console.error("[getSupabaseAdmin] created client is missing auth");
+        client = null;
+        return null;
+      }
     } catch (err) {
       console.error("[getSupabaseAdmin] failed to create client:", err);
       return null;
