@@ -124,7 +124,7 @@ export default function CorporateDashboard() {
                     </div>
                     <div className="flex items-center gap-2">
                       <Badge variant={INV_VARIANT[inv.status]} className="capitalize">{inv.status}</Badge>
-                      <Button variant="ghost" size="icon" aria-label="Download invoice" onClick={() => {}}>
+                      <Button variant="ghost" size="icon" aria-label="Download invoice" onClick={() => window.open(`/api/invoices/${inv.id}`, "_blank")}>
                         <Download className="h-4 w-4" />
                       </Button>
                     </div>

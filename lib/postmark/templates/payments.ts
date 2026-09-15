@@ -11,7 +11,7 @@ const P = {
   payment_method: "MTN MoMo",
   paid_at: "18 Sep 2026, 09:14",
   reference: "MP260918.0914.A1B2C3",
-  receipt_url: url("/dashboard/bookings"),
+  receipt_url: url("/api/receipts/LRA-7F3A2C"),
 };
 
 export const payments = {
@@ -30,7 +30,7 @@ export const payments = {
         ["Paid at", esc(d.paid_at)],
         ["Booking fee", "RWF 0", { color: "#10B981", strong: true }],
       ], totalRow("💰 Amount", d.amount_rwf, `≈ ${d.amount_usd} USD`)),
-      button("View Receipt →", d.receipt_url),
+      button("View Receipt →", url(`/api/receipts/${esc(d.booking_id)}`)),
       signature(t),
     ].join(""),
   }),
@@ -52,7 +52,7 @@ export const payments = {
         ["Date", esc(d.paid_at)],
       ], totalRow("Total", d.amount_rwf)),
       p("📎 The PDF is attached to this email. You can also download it anytime from your dashboard.", { muted: true, small: true }),
-      button("Open Dashboard →", d.receipt_url, "navy"),
+      button("Download Receipt →", url(`/api/receipts/${esc(d.booking_id)}`), "navy"),
       signature(t),
     ].join(""),
   }),

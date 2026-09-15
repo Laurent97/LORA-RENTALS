@@ -8,8 +8,12 @@ export async function GET(_: Request, { params }: { params: { invoiceId: string 
   const sb = getSupabaseAdmin();
   if (!sb) return NextResponse.json({ error: "Server not configured" }, { status: 500 });
 
-  const { data: invoice } = await sb.from("corporate_invoices").select("*, corporate_accounts(*)").eq("id", params.invoiceId).single();
-  if (!invoice) return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
+  const { data: invoice, error } = await sb
+    .from("corporate_invoices")
+    .select("*, corporate_accounts(*)")
+    .or(`id.eq.${params.invoiceId},invoice_number.eq.${params.invoiceId}`)
+    .single();
+  if (error || !invoice) return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
 
   const corp = (invoice.corporate_accounts ?? {}) as any;
   const items = Array.isArray(invoice.line_items) ? invoice.line_items : [];

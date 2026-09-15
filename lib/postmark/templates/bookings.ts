@@ -256,7 +256,7 @@ export const bookings = {
         ["Booking fee", "RWF 0", { color: "#10B981", strong: true }],
       ], totalRow(`💰 ${t.total} paid`, d.total_rwf, `≈ ${d.total_usd} USD`)),
       p("Keep this email for your records. A PDF copy is available in your dashboard.", { muted: true, small: true }),
-      button("Download PDF →", d.booking_url, "navy"),
+      button("Download Receipt →", url(`/api/receipts/${esc(d.booking_id)}`), "navy"),
       signature(t),
     ].join(""),
   }),

@@ -27,7 +27,7 @@ export const corporate = {
     name: "Monthly invoice", category: "corporate",
     subject: (d) => `Your LORA Invoice — ${d.month}`,
     preheader: (d) => `${fmtRWF(d.total_rwf)} · due ${d.due_date}`,
-    sample: { contact_name: "Diane", company_name: "Kigali Tech Ltd", month: "August 2026", invoice_number: "INV-2026-0081", trips: 12, members_active: 5, subtotal_rwf: 2850000, vat_rwf: 513000, total_rwf: 3363000, due_date: "30 Sep 2026", invoice_url: url("/corporate") },
+    sample: { contact_name: "Diane", company_name: "Kigali Tech Ltd", month: "August 2026", invoice_number: "INV-2026-0081", trips: 12, members_active: 5, subtotal_rwf: 2850000, vat_rwf: 513000, total_rwf: 3363000, due_date: "30 Sep 2026", invoice_url: url("/api/invoices/INV-2026-0081") },
     html: (d, t) => [
       badge("🧾 Invoice", "navy"),
       greeting(t, d.contact_name),
@@ -35,7 +35,7 @@ export const corporate = {
       stats([{ label: "Trips", value: String(d.trips) }, { label: "Active members", value: String(d.members_active) }, { label: "Due", value: esc(d.due_date), color: "#F59E0B" }]),
       infoCard(esc(d.invoice_number), [["Subtotal", fmtRWF(d.subtotal_rwf)], ["VAT (18%)", fmtRWF(d.vat_rwf)]], totalRow("Total due", d.total_rwf)),
       alert("Pay by bank transfer or MTN MoMo using the invoice number as reference. Details are on the PDF.", "info"),
-      button("View Invoice →", d.invoice_url, "navy"),
+      button("View Invoice →", url(`/api/invoices/${esc(d.invoice_number)}`), "navy"),
       signature(t),
     ].join(""),
   }),

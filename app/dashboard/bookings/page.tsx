@@ -128,7 +128,7 @@ export default function MyBookingsPage() {
                               <Share2 className="h-3.5 w-3.5" /> Share live trip
                             </Button>
                           )}
-                          <Button variant="outline" size="sm" onClick={() => toast.success("Receipt downloaded (demo)")}>
+                          <Button variant="outline" size="sm" onClick={() => window.open(`/api/receipts/${bookingRef(b.id)}`, "_blank")}>
                             <Download className="h-3.5 w-3.5" /> Receipt
                           </Button>
                           {!b.paymentConfirmed && ["requested", "confirmed"].includes(b.status) && (
