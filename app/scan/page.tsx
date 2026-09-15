@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Camera, CheckCircle2, Keyboard, ScanLine, XCircle } from "lucide-react";
+import { Html5Qrcode } from "html5-qrcode";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -13,13 +14,6 @@ import { useApp } from "@/lib/store";
 import { getSupabase } from "@/lib/supabase/client";
 import { bookingRef, fmtDate, parseBookingQrPayload } from "@/lib/utils";
 import type { Booking, User, Vehicle } from "@/types";
-
-// BarcodeDetector is built into Chromium; we degrade to manual entry elsewhere.
-declare class BarcodeDetector {
-  constructor(opts?: { formats: string[] });
-  detect(source: CanvasImageSource): Promise<{ rawValue: string }[]>;
-  static getSupportedFormats(): Promise<string[]>;
-}
 
 type Phase = "idle" | "scanning" | "found" | "done";
 
@@ -33,19 +27,53 @@ export default function ScanPage() {
   const [foundVehicle, setFoundVehicle] = useState<Vehicle | null>(null);
   const [foundCustomer, setFoundCustomer] = useState<User | null>(null);
   const [error, setError] = useState("");
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const rafRef = useRef<number>(0);
+  const html5Ref = useRef<Html5Qrcode | null>(null);
 
   const isStaff = user && (user.role === "owner" || user.role === "admin");
 
-  const stopCamera = () => {
-    cancelAnimationFrame(rafRef.current);
-    streamRef.current?.getTracks().forEach((t) => t.stop());
-    streamRef.current = null;
+  const stopCamera = async () => {
+    if (html5Ref.current) {
+      try {
+        await html5Ref.current.stop();
+        await html5Ref.current.clear();
+      } catch {
+        /* already stopped */
+      }
+      html5Ref.current = null;
+    }
   };
 
-  useEffect(() => () => stopCamera(), []);
+  useEffect(() => () => { void stopCamera(); }, []);
+
+  useEffect(() => {
+    if (phase !== "scanning") return;
+    const scanner = new Html5Qrcode("qr-reader");
+    html5Ref.current = scanner;
+    scanner
+      .start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 250, height: 250 } },
+        (decodedText) => {
+          void lookup(decodedText);
+        },
+        () => {
+          /* no QR in this frame — fine */
+        }
+      )
+      .then(() => {
+        toast.dismiss();
+      })
+      .catch((err) => {
+        console.error("[scan] camera start failed:", err);
+        setPhase("idle");
+        setManual(true);
+        toast.error("Camera access denied or not available — enter the code manually.");
+      });
+    return () => {
+      void stopCamera();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase]);
 
   useEffect(() => {
     if (!user) router.replace("/login?next=/scan");
@@ -91,7 +119,6 @@ export default function ScanPage() {
       setFoundVehicle(json.vehicle ?? null);
       setFoundCustomer(json.customer ?? null);
       setPhase("found");
-      stopCamera();
     } catch {
       setError("Network error. Try again.");
       setFound(null);
@@ -100,44 +127,14 @@ export default function ScanPage() {
     }
   };
 
-  const startCamera = async () => {
+  const startCamera = () => {
     setError("");
-    if (!("BarcodeDetector" in window)) {
+    if (!navigator.mediaDevices?.getUserMedia) {
       setManual(true);
-      toast.info("Camera scanning isn't supported in this browser — enter the code manually.");
+      toast.info("Camera not available in this browser — enter the code manually.");
       return;
     }
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment" },
-      });
-      streamRef.current = stream;
-      setPhase("scanning");
-      // wait for video element
-      requestAnimationFrame(async () => {
-        if (!videoRef.current) return;
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-        const detector = new BarcodeDetector({ formats: ["qr_code"] });
-        const tick = async () => {
-          if (!videoRef.current || !streamRef.current) return;
-          try {
-            const codes = await detector.detect(videoRef.current);
-            if (codes.length) {
-              void lookup(codes[0].rawValue);
-              return;
-            }
-          } catch {
-            /* frame not ready */
-          }
-          rafRef.current = requestAnimationFrame(tick);
-        };
-        tick();
-      });
-    } catch {
-      setManual(true);
-      toast.error("Camera access denied — enter the code manually.");
-    }
+    setPhase("scanning");
   };
 
   const confirm = () => {
@@ -225,7 +222,7 @@ export default function ScanPage() {
           <CardContent className="p-6">
             {phase === "scanning" ? (
               <div className="relative overflow-hidden rounded-xl bg-navy-950">
-                <video ref={videoRef} className="aspect-square w-full object-cover" muted playsInline />
+                <div id="qr-reader" className="aspect-square w-full" />
                 <div className="pointer-events-none absolute inset-8 rounded-xl border-2 border-gold/70" />
                 <p className="absolute bottom-3 left-0 right-0 text-center text-xs font-medium text-white/80">
                   Point at the customer&apos;s QR code
