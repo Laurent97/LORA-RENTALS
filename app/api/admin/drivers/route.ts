@@ -28,14 +28,14 @@ export async function PATCH(req: Request) {
 
   let update: Record<string, any> = {};
   if (action === "approve") {
-    update = { is_verified: true, is_available: true, background_check_status: "approved", verified_at: new Date().toISOString(), verified_by: caller.id };
+    update = { is_verified: true, is_available: true, kyc_status: "approved", background_check_status: "approved", approved_at: new Date().toISOString(), approved_by: caller.id, verified_at: new Date().toISOString(), verified_by: caller.id };
   } else if (action === "suspend") {
     update = { is_available: false };
   } else if (action === "reinstate") {
     update = { is_available: true };
   } else if (action === "redflag") {
     const { data } = await sb.from("drivers").select("is_verified").eq("id", id).single();
-    update = { is_verified: false, background_check_status: data && (data as any).is_verified ? "rejected" : "pending" };
+    update = { is_verified: false, is_available: false, kyc_status: data && (data as any).is_verified ? "rejected" : "pending", background_check_status: data && (data as any).is_verified ? "rejected" : "pending" };
   } else {
     return NextResponse.json({ error: "unknown action" }, { status: 400 });
   }
