@@ -42,7 +42,7 @@ export async function POST(req: Request) {
       q = sb
         .from("bookings")
         .select("*, vehicles(*), customer:users!customer_id(*), owner:users!owner_id(*)")
-        .ilike("id", `${prefix}%`)
+        .filter("id::text", "ilike", `${prefix}%`)
         .maybeSingle();
     }
 
