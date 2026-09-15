@@ -1,5 +1,10 @@
 -- Independent driver marketplace schema
 
+-- allow driver role in public.users
+alter table public.users drop constraint if exists users_role_check;
+alter table public.users add constraint users_role_check
+  check (role in ('customer','owner','driver','admin','corporate_admin','corporate_manager','corporate_member'));
+
 -- Extend public.drivers for independent drivers
 alter table public.drivers add column if not exists user_id uuid references public.users(id);
 alter table public.drivers add column if not exists driver_type text default 'owner_attached'
