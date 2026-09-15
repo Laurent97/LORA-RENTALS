@@ -1,0 +1,17 @@
+alter table public.bookings add column if not exists qr_token text;
+alter table public.bookings add column if not exists picked_up_at timestamptz;
+alter table public.bookings add column if not exists returned_at timestamptz;
+alter table public.bookings add column if not exists owner_response_deadline timestamptz;
+alter table public.bookings add column if not exists owner_responded_at timestamptz;
+alter table public.bookings add column if not exists points_redeemed int not null default 0;
+alter table public.bookings add column if not exists points_earned int not null default 0;
+alter table public.bookings add column if not exists corporate_id uuid;
+alter table public.bookings add column if not exists cost_center_id uuid;
+alter table public.bookings add column if not exists cost_center text;
+alter table public.bookings add column if not exists po_number text;
+alter table public.bookings add column if not exists booked_by_user_id uuid;
+alter table public.bookings add column if not exists approval_status text not null default 'not_required';
+alter table public.bookings add column if not exists approved_by uuid;
+alter table public.bookings add column if not exists approved_at timestamptz;
+alter table public.bookings add column if not exists payment_type text not null default 'on_pickup';
+alter table public.bookings add column if not exists rental_mode text;

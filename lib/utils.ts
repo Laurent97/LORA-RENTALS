@@ -112,7 +112,7 @@ export function parseBookingQrPayload(raw: string): Partial<BookingQrPayload> | 
 const QR_BASE = "https://lorarentals.org/pickup";
 
 function b64Encode(s: string) {
-  if (typeof Buffer !== "undefined") return Buffer.from(s).toString("base64url").replace(/=+$/, "");
+  if (typeof Buffer !== "undefined") return Buffer.from(s).toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
   return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
