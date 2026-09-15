@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { StatusBadge } from "@/components/status-badge";
 import { useApp } from "@/lib/store";
-import { bookingRef, fmtDate } from "@/lib/utils";
+import { bookingRef, fmtDate, parseBookingQrPayload } from "@/lib/utils";
 import type { Booking } from "@/types";
 
 // BarcodeDetector is built into Chromium; we degrade to manual entry elsewhere.
@@ -50,8 +50,14 @@ export default function ScanPage() {
 
   const lookup = (raw: string) => {
     const token = raw.trim();
-    // QR encodes "LORA:{qrToken}" — accept raw token or full payload
-    const key = token.startsWith("LORA:") ? token.slice(5) : token;
+    // QR encodes "LORA|1|<token>|<details...>" or legacy "LORA:<token>"
+    let key = token;
+    if (token.startsWith("LORA|")) {
+      const parsed = parseBookingQrPayload(token);
+      if (parsed?.token) key = parsed.token;
+    } else if (token.startsWith("LORA:")) {
+      key = token.slice(5);
+    }
     const b = bookings.find(
       (x) => x.qrToken === key || x.qrCode === key || x.id === key || bookingRef(x.id) === key.toUpperCase()
     );

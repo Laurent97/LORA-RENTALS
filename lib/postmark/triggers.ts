@@ -1,7 +1,7 @@
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { bookingFromRow, inspectionFromRow, sosFromRow, userFromRow, vehicleFromRow, corporateFromRow } from "@/lib/supabase/mappers";
 import { USD_RATE } from "@/lib/constants";
-import { bookingRef, fmtDateTime, rentalDays } from "@/lib/utils";
+import { bookingRef, buildBookingQrPayload, fmtDate, fmtDateTime, rentalDays } from "@/lib/utils";
 import { sendEmail, type SendResult } from "./send";
 import { url } from "./config";
 import type { EmailLocale } from "./i18n";
@@ -104,7 +104,18 @@ function bookingData(b: Booking, v: Vehicle | null, customer: User | null, owner
     booking_url: url("/dashboard/bookings"),
     owner_url: url("/owner/bookings"),
     browse_url: url("/browse"),
-    qr_payload: `LORA:${b.qrToken ?? b.qrCode ?? b.id}`,
+    qr_payload: buildBookingQrPayload({
+      token: b.qrToken ?? b.qrCode ?? b.id,
+      ref: bookingRef(b.id),
+      make: v?.make ?? "",
+      model: v?.model ?? "",
+      year: v?.year ?? "",
+      plate: v?.plate ?? "",
+      start: fmtDate(b.startDate),
+      end: fmtDate(b.endDate),
+      pickup: b.pickupLocation,
+      total: b.totalPrice,
+    }),
   };
 }
 

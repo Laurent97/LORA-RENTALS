@@ -19,7 +19,7 @@ import { TripTracker } from "@/components/trip-tracker";
 import { BOOKING_TIMELINE, PAYMENT_METHOD_LABELS } from "@/lib/constants";
 import { useVehicles } from "@/lib/lookup";
 import { useApp } from "@/lib/store";
-import { cn, fmtDate, formatMoney, qrUrl, bookingRef } from "@/lib/utils";
+import { buildBookingQrPayload, cn, fmtDate, formatMoney, qrUrl, bookingRef } from "@/lib/utils";
 import type { Booking } from "@/types";
 
 const GROUPS: Record<string, (b: Booking) => boolean> = {
@@ -179,8 +179,38 @@ export default function MyBookingsPage() {
           {qrBooking && (
             <>
               <SafetyWarning variant="compact" showReport={false} />
-              <div className="mx-auto w-fit rounded-2xl border border-border bg-white p-4">
-                <Image src={qrUrl(`LORA:${qrBooking.qrToken ?? qrBooking.qrCode}`, 220)} alt="Pickup QR" width={220} height={220} />
+              <div className="mx-auto w-fit rounded-2xl border border-border bg-white p-4 text-left">
+                {(() => {
+                  const v = vehicles.find((x) => x.id === qrBooking.vehicleId);
+                  return (
+                    <>
+                      <Image
+                        src={qrUrl(buildBookingQrPayload({
+                          token: qrBooking.qrToken ?? qrBooking.qrCode,
+                          ref: bookingRef(qrBooking.id),
+                          make: v?.make ?? "",
+                          model: v?.model ?? "",
+                          year: v?.year ?? "",
+                          plate: v?.plate ?? "",
+                          start: fmtDate(qrBooking.startDate),
+                          end: fmtDate(qrBooking.endDate),
+                          pickup: qrBooking.pickupLocation,
+                          total: qrBooking.totalPrice,
+                        }))}
+                        alt="Pickup QR"
+                        width={220}
+                        height={220}
+                      />
+                      <div className="mt-3 space-y-1 border-t border-border pt-3 text-xs text-navy-800">
+                        <p className="font-bold">{bookingRef(qrBooking.id)}</p>
+                        {v && <p>{v.year} {v.make} {v.model}</p>}
+                        <p>{fmtDate(qrBooking.startDate)} → {fmtDate(qrBooking.endDate)}</p>
+                        <p>Pick-up: {qrBooking.pickupLocation}</p>
+                        <p className="font-semibold">{formatMoney(qrBooking.totalPrice, currency)}</p>
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
             </>
           )}

@@ -59,3 +59,52 @@ export function whatsappLink(phone: string, message: string): string {
 export function bookingRef(id: string): string {
   return `LRA-${id.slice(0, 6).toUpperCase()}`;
 }
+
+export interface BookingQrPayload {
+  token: string;
+  ref: string;
+  make: string;
+  model: string;
+  year: number | string;
+  plate: string;
+  start: string;
+  end: string;
+  pickup: string;
+  total: number;
+}
+
+export function buildBookingQrPayload(p: BookingQrPayload): string {
+  const clean = (v: string) => v.replace(/\|/g, " ").replace(/\s+/g, " ").trim();
+  return [
+    "LORA",
+    "1",
+    p.token,
+    p.ref,
+    clean(p.make),
+    clean(p.model),
+    String(p.year),
+    clean(p.plate),
+    p.start,
+    p.end,
+    clean(p.pickup),
+    String(p.total),
+  ].join("|");
+}
+
+export function parseBookingQrPayload(raw: string): Partial<BookingQrPayload> | null {
+  if (!raw.startsWith("LORA|")) return null;
+  const [, , token, ref, make, model, year, plate, start, end, pickup, total] = raw.split("|");
+  if (!token) return null;
+  return {
+    token,
+    ref,
+    make,
+    model,
+    year,
+    plate,
+    start,
+    end,
+    pickup,
+    total: total ? Number(total) : 0,
+  };
+}

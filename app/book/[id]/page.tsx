@@ -29,7 +29,7 @@ import { SafetyWarning } from "@/components/safety/SafetyWarning";
 import { getSupabase } from "@/lib/supabase/client";
 import { useHydrated, useVehicles } from "@/lib/lookup";
 import { useApp } from "@/lib/store";
-import { cn, formatMoney, qrUrl, rentalDays, bookingRef } from "@/lib/utils";
+import { buildBookingQrPayload, cn, formatMoney, qrUrl, rentalDays, bookingRef, fmtDate } from "@/lib/utils";
 import type { Booking, PaymentMethod, PaymentPoint } from "@/types";
 
 const STEPS = ["Dates & location", "Driver details", "Extras & payment", "Confirmed"];
@@ -382,9 +382,32 @@ export default function BookingPage() {
                   Booking <strong>{bookingRef(confirmed.id)}</strong> is with the owner for approval.
                   You'll be notified once confirmed — usually within 4 hours.
                 </p>
-                <div className="mx-auto mt-6 w-fit rounded-2xl border border-border bg-white p-4">
-                  <Image src={qrUrl(`LORA:${confirmed.qrToken ?? confirmed.qrCode}`)} alt="Pickup QR code" width={180} height={180} />
-                  <p className="mt-2 flex items-center justify-center gap-1 text-xs font-semibold text-navy-800">
+                <div className="mx-auto mt-6 w-fit rounded-2xl border border-border bg-white p-4 text-left">
+                  <Image
+                    src={qrUrl(buildBookingQrPayload({
+                      token: confirmed.qrToken ?? confirmed.qrCode,
+                      ref: bookingRef(confirmed.id),
+                      make: vehicle.make,
+                      model: vehicle.model,
+                      year: vehicle.year,
+                      plate: vehicle.plate,
+                      start: fmtDate(confirmed.startDate),
+                      end: fmtDate(confirmed.endDate),
+                      pickup: confirmed.pickupLocation,
+                      total: confirmed.totalPrice,
+                    }))}
+                    alt="Pickup QR code"
+                    width={180}
+                    height={180}
+                  />
+                  <div className="mt-3 space-y-1 border-t border-border pt-3 text-xs text-navy-800">
+                    <p className="font-bold">{bookingRef(confirmed.id)}</p>
+                    <p>{vehicle.year} {vehicle.make} {vehicle.model}</p>
+                    <p>{fmtDate(confirmed.startDate)} → {fmtDate(confirmed.endDate)}</p>
+                    <p>Pick-up: {confirmed.pickupLocation}</p>
+                    <p className="font-semibold">{formatMoney(confirmed.totalPrice, currency)}</p>
+                  </div>
+                  <p className="mt-3 flex items-center justify-center gap-1 text-xs font-semibold text-navy-800">
                     <QrCode className="h-3.5 w-3.5" /> Show at pickup
                   </p>
                 </div>
