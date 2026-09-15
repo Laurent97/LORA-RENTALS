@@ -42,7 +42,7 @@ const STEPS = [
 
 export default function HomePage() {
   const featured = useVehicles()
-    .filter((v) => v.status === "available" && v.verified)
+    .filter((v) => v.status === "available" && v.verified && v.featured)
     .slice(0, 6);
 
   return (

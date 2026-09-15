@@ -81,6 +81,9 @@ export interface Vehicle {
   paymentMethods: PaymentMethod[];
   airportApproved: boolean;
   country?: string;
+  featured?: boolean;
+  redFlaggedAt?: string;
+  deletedAt?: string;
   rentalMode?: "self_drive" | "with_driver" | "both";
   driverId?: string;
   priceSelfDriveRwf?: number;
