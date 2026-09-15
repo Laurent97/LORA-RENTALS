@@ -1,31 +1,36 @@
 -- Feature B — Corporate Booking System
 
-create table if not exists public.corporate_accounts (
-  id uuid primary key default uuid_generate_v4(),
-  company_name text not null,
-  legal_name text,
-  tin text,
-  registration_number text,
-  industry text,
-  website text,
-  logo_url text,
-  billing_email text not null,
-  billing_address text,
-  billing_phone text,
-  billing_city text,
-  credit_terms text default 'net_30' check (credit_terms in ('prepaid','net_15','net_30','net_45','net_60')),
-  credit_limit_rwf numeric default 0,
-  current_balance_rwf numeric default 0,
-  discount_percent numeric(5,2) default 0,
-  custom_rate_card jsonb default '{}'::jsonb,
-  account_manager_id uuid references public.users(id),
-  dedicated_support_email text,
-  status text default 'pending' check (status in ('pending','active','suspended','closed')),
-  approved_by uuid references public.users(id),
-  approved_at timestamptz,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
+-- Upgrade existing corporate tables from seed.sql
+alter table public.corporate_accounts add column if not exists legal_name text;
+alter table public.corporate_accounts add column if not exists registration_number text;
+alter table public.corporate_accounts add column if not exists industry text;
+alter table public.corporate_accounts add column if not exists website text;
+alter table public.corporate_accounts add column if not exists logo_url text;
+alter table public.corporate_accounts add column if not exists billing_address text;
+alter table public.corporate_accounts add column if not exists billing_phone text;
+alter table public.corporate_accounts add column if not exists billing_city text;
+alter table public.corporate_accounts add column if not exists credit_limit_rwf numeric default 0;
+alter table public.corporate_accounts add column if not exists current_balance_rwf numeric default 0;
+alter table public.corporate_accounts add column if not exists discount_percent numeric(5,2) default 0;
+alter table public.corporate_accounts add column if not exists custom_rate_card jsonb default '{}'::jsonb;
+alter table public.corporate_accounts add column if not exists account_manager_id uuid references public.users(id);
+alter table public.corporate_accounts add column if not exists dedicated_support_email text;
+alter table public.corporate_accounts add column if not exists approved_by uuid references public.users(id);
+alter table public.corporate_accounts add column if not exists approved_at timestamptz;
+alter table public.corporate_accounts add column if not exists updated_at timestamptz not null default now();
+
+-- Add corporate_id to members table and backfill from account_id
+alter table public.corporate_members add column if not exists corporate_id uuid references public.corporate_accounts(id);
+update public.corporate_members set corporate_id = account_id where corporate_id is null and account_id is not null;
+
+alter table public.corporate_members add column if not exists cost_center_id uuid references public.cost_centers(id);
+alter table public.corporate_members add column if not exists can_book boolean not null default true;
+alter table public.corporate_members add column if not exists can_approve boolean not null default false;
+alter table public.corporate_members add column if not exists monthly_limit_rwf numeric;
+alter table public.corporate_members add column if not exists invited_by uuid references public.users(id);
+alter table public.corporate_members add column if not exists invited_at timestamptz;
+alter table public.corporate_members add column if not exists joined_at timestamptz;
+alter table public.corporate_members add column if not exists status text not null default 'active' check (status in ('invited','active','suspended','removed'));
 
 create table if not exists public.cost_centers (
   id uuid primary key default uuid_generate_v4(),
@@ -37,22 +42,6 @@ create table if not exists public.cost_centers (
   manager_id uuid references public.users(id),
   is_active boolean default true,
   created_at timestamptz not null default now()
-);
-
-create table if not exists public.corporate_members (
-  id uuid primary key default uuid_generate_v4(),
-  corporate_id uuid not null references public.corporate_accounts(id) on delete cascade,
-  user_id uuid not null references public.users(id) on delete cascade,
-  role text not null default 'member' check (role in ('admin','manager','member')),
-  cost_center_id uuid references public.cost_centers(id),
-  can_book boolean not null default true,
-  can_approve boolean not null default false,
-  monthly_limit_rwf numeric,
-  invited_by uuid references public.users(id),
-  invited_at timestamptz,
-  joined_at timestamptz,
-  status text not null default 'active' check (status in ('invited','active','suspended','removed')),
-  unique (corporate_id, user_id)
 );
 
 create table if not exists public.corporate_booking_policies (
@@ -111,7 +100,7 @@ create policy "corporate_accounts_members" on public.corporate_accounts for all
 create policy "cost_centers_members" on public.cost_centers for all
   using (public.is_admin() or corporate_id in (select corporate_id from public.corporate_members where user_id = auth.uid()));
 create policy "corporate_members_view" on public.corporate_members for all
-  using (public.is_admin() or corporate_id in (select corporate_id from public.corporate_members where user_id = auth.uid()));
+  using (public.is_admin() or corporate_id in (select corporate_id from public.corporate_members m where m.user_id = auth.uid()));
 create policy "corporate_booking_policies_members" on public.corporate_booking_policies for all
   using (public.is_admin() or corporate_id in (select corporate_id from public.corporate_members where user_id = auth.uid()));
 create policy "corporate_invoices_admins" on public.corporate_invoices for all
