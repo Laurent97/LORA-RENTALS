@@ -94,8 +94,7 @@ export default function BookingPage() {
   useEffect(() => {
     if (step !== 1 || rentalMode !== "with_driver") return;
     setLoadingDrivers(true);
-    const home = pickup || "Kigali";
-    void fetch(`/api/drivers?verified=true&available=true&city=${encodeURIComponent(home)}&limit=50`)
+    void fetch("/api/drivers?verified=false&available=false&limit=50", { cache: "no-store" })
       .then(async (r) => {
         const data = (await r.json().catch(() => [])) as Driver[];
         setDrivers(Array.isArray(data) ? data : []);
@@ -353,7 +352,7 @@ export default function BookingPage() {
                     {loadingDrivers ? (
                       <p className="py-8 text-center text-sm text-muted-foreground">Loading drivers…</p>
                     ) : drivers.length === 0 ? (
-                      <p className="py-8 text-center text-sm text-muted-foreground">No verified drivers are available for these dates.</p>
+                      <p className="py-8 text-center text-sm text-muted-foreground">No chauffeurs found for this booking.</p>
                     ) : (
                       <div className="mt-4 space-y-3">
                         {drivers.map((d) => (
