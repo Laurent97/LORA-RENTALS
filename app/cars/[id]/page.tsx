@@ -8,6 +8,8 @@ import {
   BadgeCheck,
   Banknote,
   CalendarDays,
+  ChevronLeft,
+  ChevronRight,
   Fuel,
   Heart,
   MapPin,
@@ -15,6 +17,7 @@ import {
   Settings2,
   ShieldCheck,
   Users,
+  X,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -47,7 +50,20 @@ export default function CarDetailPage() {
   const hydrated = useHydrated();
   const owner = users.find((u) => u.id === vehicle?.ownerId);
   const [imgIdx, setImgIdx] = useState(0);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
   const [trust, setTrust] = useState<import("@/types").TrustScore | null>(null);
+
+  useEffect(() => {
+    if (!lightboxOpen || !vehicle) return;
+    const len = vehicle.images.length;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setLightboxOpen(false);
+      if (e.key === "ArrowLeft") setImgIdx((i) => (i - 1 + len) % len);
+      if (e.key === "ArrowRight") setImgIdx((i) => (i + 1) % len);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [lightboxOpen, vehicle?.images.length]);
 
   useEffect(() => {
     if (!owner?.id) return;
@@ -94,7 +110,11 @@ export default function CarDetailPage() {
     <main className="container py-8">
       {/* Gallery */}
       <div className="grid gap-3 lg:grid-cols-[2fr_1fr]">
-        <div className="relative aspect-[16/10] overflow-hidden rounded-2xl bg-muted">
+        <button
+          type="button"
+          onClick={() => setLightboxOpen(true)}
+          className="relative aspect-[16/10] overflow-hidden rounded-2xl bg-muted text-left"
+        >
           <Image
             src={vehicle.images[imgIdx]}
             alt={`${vehicle.make} ${vehicle.model}`}
@@ -103,16 +123,19 @@ export default function CarDetailPage() {
             priority
             className="object-cover"
           />
+          <span className="absolute bottom-4 right-4 rounded-full bg-card/90 px-3 py-1 text-xs font-semibold text-foreground backdrop-blur">
+            {imgIdx + 1} / {vehicle.images.length}
+          </span>
           <button
-            onClick={() => toggleFavorite(vehicle.id)}
+            onClick={(e) => { e.stopPropagation(); toggleFavorite(vehicle.id); }}
             aria-label="Save to favorites"
             className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-card/90 backdrop-blur transition-transform hover:scale-110"
           >
             <Heart className={cn("h-5 w-5", fav ? "fill-red-500 text-red-500" : "text-muted-foreground")} />
           </button>
-        </div>
-        <div className="hidden grid-cols-2 gap-3 lg:grid lg:grid-cols-1">
-          {vehicle.images.slice(0, 3).map((src, i) => (
+        </button>
+        <div className="hidden max-h-[520px] grid-cols-2 gap-3 overflow-y-auto pr-1 lg:grid lg:grid-cols-2">
+          {vehicle.images.map((src, i) => (
             <button
               key={src}
               onClick={() => setImgIdx(i)}
@@ -121,7 +144,7 @@ export default function CarDetailPage() {
                 imgIdx === i && "ring-2 ring-gold"
               )}
             >
-              <div className="relative aspect-[16/7]">
+              <div className="relative aspect-[4/3]">
                 <Image src={src} alt="" fill sizes="(max-width: 1024px) 0, 33vw" className="object-cover" />
               </div>
             </button>
@@ -140,6 +163,64 @@ export default function CarDetailPage() {
           </button>
         ))}
       </div>
+
+      {/* Lightbox */}
+      {lightboxOpen && (
+        <div
+          className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-navy-950/95 p-4"
+          onClick={() => setLightboxOpen(false)}
+        >
+          <button
+            onClick={() => setLightboxOpen(false)}
+            className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-card/90 text-foreground backdrop-blur"
+            aria-label="Close"
+          >
+            <X className="h-5 w-5" />
+          </button>
+          <div
+            className="relative aspect-[16/10] w-full max-w-5xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Image
+              src={vehicle.images[imgIdx]}
+              alt={`${vehicle.make} ${vehicle.model}`}
+              fill
+              sizes="100vw"
+              className="object-contain"
+            />
+          </div>
+          <p className="mt-4 text-sm font-medium text-white/80">
+            {imgIdx + 1} / {vehicle.images.length}
+          </p>
+          <div className="mt-4 flex items-center gap-4">
+            <button
+              onClick={(e) => { e.stopPropagation(); setImgIdx((i) => (i - 1 + vehicle.images.length) % vehicle.images.length); }}
+              className="flex h-11 w-11 items-center justify-center rounded-full bg-card/90 text-foreground"
+              aria-label="Previous image"
+            >
+              <ChevronLeft className="h-6 w-6" />
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); setImgIdx((i) => (i + 1) % vehicle.images.length); }}
+              className="flex h-11 w-11 items-center justify-center rounded-full bg-card/90 text-foreground"
+              aria-label="Next image"
+            >
+              <ChevronRight className="h-6 w-6" />
+            </button>
+          </div>
+          <div className="mt-6 flex max-w-4xl gap-2 overflow-x-auto px-2">
+            {vehicle.images.map((src, i) => (
+              <button
+                key={src}
+                onClick={(e) => { e.stopPropagation(); setImgIdx(i); }}
+                className={cn("relative h-16 w-24 shrink-0 overflow-hidden rounded-lg", imgIdx === i && "ring-2 ring-gold")}
+              >
+                <Image src={src} alt="" fill sizes="96px" className="object-cover" />
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="mt-8 grid gap-10 lg:grid-cols-[1fr_minmax(300px,380px)]">
         {/* Left column */}
