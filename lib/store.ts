@@ -438,8 +438,6 @@ export const useApp = create<AppState>()(
           return;
         }
         try {
-          // Embedded reply join needs review_replies — fall back to a plain
-          // select if the migration hasn't been run on this project yet.
           let reviewsRes = await sb
             .from("reviews")
             .select("*, customer:users!customer_id(name), reply:review_replies(*, owner:users!owner_id(name))");
@@ -448,40 +446,44 @@ export const useApp = create<AppState>()(
             reviewsRes = await sb.from("reviews").select("*, customer:users!customer_id(name)");
           }
           const uid = get().user?.id;
+          const settle = await Promise.allSettled([
+            sb.from("users").select("*"),
+            sb.from("vehicles").select("*"),
+            sb.from("bookings").select("*"),
+            sb.from("notifications").select("*").order("created_at", { ascending: false }).limit(50),
+            sb.from("locations").select("*"),
+            sb.from("vehicle_availability").select("*"),
+            sb.from("loyalty_points").select("*"),
+            sb.from("points_transactions").select("*"),
+            sb.from("referrals").select("*"),
+            sb.from("inspections").select("*"),
+            sb.from("sos_alerts").select("*"),
+            sb.from("posts").select("*"),
+            sb.from("corporate_accounts").select("*"),
+            sb.from("corporate_members").select("*"),
+            sb.from("invoices").select("*"),
+            sb.from("airport_bookings").select("*"),
+            uid
+              ? sb.from("currency_preferences").select("*").eq("user_id", uid).maybeSingle()
+              : Promise.resolve({ data: null, error: null }),
+          ]);
+
+          const dataOf = (s: PromiseSettledResult<{ data?: any; error?: any }>) =>
+            s.status === "fulfilled" && !s.value.error ? (s.value.data ?? null) : null;
+
           const [u, v, b, n, loc, av, loy, pts, ref, insp, sos, posts, corp, cm, inv, ap, fx] =
-            await Promise.all([
-              sb.from("users").select("*"),
-              sb.from("vehicles").select("*"),
-              sb.from("bookings").select("*"),
-              sb.from("notifications").select("*").order("created_at", { ascending: false }).limit(50),
-              sb.from("locations").select("*"),
-              sb.from("vehicle_availability").select("*"),
-              sb.from("loyalty_points").select("*"),
-              sb.from("points_transactions").select("*"),
-              sb.from("referrals").select("*"),
-              sb.from("inspections").select("*"),
-              sb.from("sos_alerts").select("*"),
-              sb.from("posts").select("*"),
-              sb.from("corporate_accounts").select("*"),
-              sb.from("corporate_members").select("*"),
-              sb.from("invoices").select("*"),
-              sb.from("airport_bookings").select("*"),
-              uid
-                ? sb.from("currency_preferences").select("*").eq("user_id", uid).maybeSingle()
-                : Promise.resolve({ data: null, error: null }),
-            ]);
-          const dbBookings = (b.data ?? []).map(bookingFromRow);
-          // On re-hydration keep locally-created bookings not yet synced to
-          // the DB. On the first hydrate the store still holds seed bookings —
-          // drop those entirely so mock ids never mix with real rows.
+            settle.map(dataOf);
+
+          const dbBookings = (b ?? []).map(bookingFromRow);
           const localOnly = get().hydrated
-            ? get().bookings.filter((x) => !dbBookings.some((d) => d.id === x.id))
+            ? get().bookings.filter((x) => !dbBookings.some((d: any) => d.id === x.id))
             : [];
+
           set({
-            users: u.data?.length ? u.data.map(userFromRow) : get().users,
-            vehicles: v.data?.length ? v.data.map(vehicleFromRow) : get().vehicles,
+            users: u?.length ? u.map(userFromRow) : get().users,
+            vehicles: v?.length ? v.map(vehicleFromRow) : get().vehicles,
             reviews: (reviewsRes.data ?? []).map(reviewFromRow),
-            notifications: (n.data ?? []).map((x: Record<string, unknown>) => ({
+            notifications: (n ?? []).map((x: Record<string, unknown>) => ({
               id: x.id as string,
               userId: x.user_id as string,
               type: x.type as AppNotification["type"],
@@ -491,23 +493,24 @@ export const useApp = create<AppState>()(
               createdAt: x.created_at as string,
             })),
             bookings: [...localOnly, ...dbBookings],
-            locations: (loc.data ?? []).map(locationFromRow),
-            availability: (av.data ?? []).map(availabilityFromRow),
-            loyalty: (loy.data ?? []).map(loyaltyFromRow),
-            pointsTx: (pts.data ?? []).map(pointsTxFromRow),
-            referrals: (ref.data ?? []).map(referralFromRow),
-            inspections: (insp.data ?? []).map(inspectionFromRow),
-            sosAlerts: (sos.data ?? []).map(sosFromRow),
-            posts: posts.data?.length ? posts.data.map(postFromRow) : get().posts,
-            corporateAccounts: (corp.data ?? []).map(corporateFromRow),
-            corporateMembers: (cm.data ?? []).map(corpMemberFromRow),
-            invoices: (inv.data ?? []).map(invoiceFromRow),
-            airportBookings: (ap.data ?? []).map(airportFromRow),
-            currency: (fx.data?.preferred_currency as "RWF" | "USD" | undefined) ?? get().currency,
+            locations: (loc ?? []).map(locationFromRow),
+            availability: (av ?? []).map(availabilityFromRow),
+            loyalty: (loy ?? []).map(loyaltyFromRow),
+            pointsTx: (pts ?? []).map(pointsTxFromRow),
+            referrals: (ref ?? []).map(referralFromRow),
+            inspections: (insp ?? []).map(inspectionFromRow),
+            sosAlerts: (sos ?? []).map(sosFromRow),
+            posts: posts?.length ? posts.map(postFromRow) : get().posts,
+            corporateAccounts: (corp ?? []).map(corporateFromRow),
+            corporateMembers: (cm ?? []).map(corpMemberFromRow),
+            invoices: (inv ?? []).map(invoiceFromRow),
+            airportBookings: (ap ?? []).map(airportFromRow),
+            currency: (fx?.preferred_currency as "RWF" | "USD" | undefined) ?? get().currency,
             hydrated: true,
           });
-        } catch {
-          set({ hydrated: true }); // stay on bundled mock data
+        } catch (e) {
+          console.warn("[hydrate] failed:", (e as Error)?.message);
+          set({ hydrated: true });
         }
       },
 
