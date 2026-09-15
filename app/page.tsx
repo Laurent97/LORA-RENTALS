@@ -13,7 +13,6 @@ import {
   QrCode,
   ShieldCheck,
   Smartphone,
-  Sparkles,
   Star,
   Wallet,
 } from "lucide-react";
@@ -60,16 +59,13 @@ export default function HomePage() {
         <div className="absolute inset-0 bg-gradient-to-b from-navy-950/60 via-navy-950/80 to-navy-950" />
         <div className="container relative py-20 md:py-28">
           <div className="mx-auto max-w-3xl text-center">
-            <Badge variant="gold" className="mb-5 border border-gold/30 bg-gold/10 px-3 py-1">
-              <Sparkles className="h-3 w-3" /> Rwanda's premium car rental platform
-            </Badge>
             <h1 className="font-display text-4xl font-extrabold tracking-tight md:text-6xl">
-              Drive Rwanda in
-              <span className="text-gradient-gold"> style</span>
+              Drive Rwanda with
+              <span className="text-gradient-gold"> confidence</span>
             </h1>
             <p className="mx-auto mt-5 max-w-xl text-base text-silver/90 md:text-lg">
               Private cars from verified owners across Kigali, Musanze, Rubavu and
-              beyond. Book in 60 seconds — <strong className="text-gold">pay at pickup, RWF 0 booking fee.</strong>
+              beyond. Reserve online and pay at pickup.
             </p>
           </div>
           <div className="mx-auto mt-10 max-w-5xl">
@@ -111,7 +107,7 @@ export default function HomePage() {
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-gold-600 dark:text-gold">Featured fleet</p>
             <h2 className="mt-1 font-display text-3xl font-extrabold tracking-tight md:text-4xl">
-              Handpicked for Rwanda's roads
+              Featured fleet
             </h2>
           </div>
           <Link href="/browse" className="hidden sm:block">
@@ -160,7 +156,7 @@ export default function HomePage() {
           <div className="mx-auto mb-12 max-w-2xl text-center">
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-gold">How it works</p>
             <h2 className="mt-2 font-display text-3xl font-extrabold md:text-4xl">
-              Three steps. Zero fees.
+              Three steps to your rental
             </h2>
           </div>
           <div className="grid gap-8 md:grid-cols-3">
@@ -218,7 +214,7 @@ export default function HomePage() {
         <div className="mx-auto mb-10 max-w-2xl text-center">
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-gold-600 dark:text-gold">Testimonials</p>
           <h2 className="mt-2 font-display text-3xl font-extrabold md:text-4xl">
-            Loved across Rwanda
+            Customer reviews
           </h2>
         </div>
         <div className="grid gap-6 md:grid-cols-3">
@@ -252,7 +248,7 @@ export default function HomePage() {
             Ready to hit the road?
           </h2>
           <p className="mx-auto mt-3 max-w-md text-muted-foreground">
-            Browse verified cars across Rwanda and reserve yours today — pay nothing online.
+            Browse verified cars and reserve your next trip.
           </p>
           <div className="mt-7 flex flex-wrap justify-center gap-3">
             <Link href="/browse">
