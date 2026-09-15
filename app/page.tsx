@@ -44,7 +44,7 @@ const STEPS = [
 export default function HomePage() {
   const { hydrated, hydrate } = useApp((s) => ({ hydrated: s.hydrated, hydrate: s.hydrate }));
   const vehicles = useVehicles()
-    .filter((v) => v.verified && !v.deletedAt && v.status !== "pending_approval")
+    .filter((v) => v.verified && !v.deletedAt && v.status === "available")
     .sort((a, b) => {
       if (a.featured && !b.featured) return -1;
       if (!a.featured && b.featured) return 1;
