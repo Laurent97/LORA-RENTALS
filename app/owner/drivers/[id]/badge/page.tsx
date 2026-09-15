@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
-import { Loader2, Plus, Printer, RefreshCw } from "lucide-react";
+import { Download, Loader2, Plus, Printer, RefreshCw } from "lucide-react";
+import { toPng } from "html-to-image";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -39,6 +40,7 @@ export default function OwnerDriverBadgePage() {
   const [badge, setBadge] = useState<BadgeRow | null>(null);
   const [loading, setLoading] = useState(true);
   const [working, setWorking] = useState(false);
+  const badgeRef = useRef<HTMLDivElement>(null);
 
   const token = async () => {
     const sb = getSupabase();
@@ -175,6 +177,25 @@ export default function OwnerDriverBadgePage() {
     w.document.close();
   };
 
+  const downloadPng = useCallback(async () => {
+    if (!badgeRef.current || !driver) return;
+    setWorking(true);
+    try {
+      const dataUrl = await toPng(badgeRef.current, { pixelRatio: 3, cacheBust: true });
+      const link = document.createElement("a");
+      const name = driver.full_name.replace(/\s+/g, "-").toLowerCase() || "driver";
+      link.download = `lora-badge-${name}.png`;
+      link.href = dataUrl;
+      link.click();
+      toast.success("Badge PNG downloaded");
+    } catch (err) {
+      console.error(err);
+      toast.error("Could not create PNG. Try again.");
+    } finally {
+      setWorking(false);
+    }
+  }, [driver]);
+
   if (!user || loading) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
@@ -198,7 +219,10 @@ export default function OwnerDriverBadgePage() {
           {badge ? (
             <>
               <Button variant="outline" onClick={handlePrint} disabled={working}>
-                <Printer className="mr-2 h-4 w-4" /> Download / Print
+                <Printer className="mr-2 h-4 w-4" /> Print
+              </Button>
+              <Button variant="outline" onClick={downloadPng} disabled={working}>
+                <Download className="mr-2 h-4 w-4" /> Download PNG
               </Button>
               <Button variant="outline" onClick={reissue} disabled={working}>
                 <RefreshCw className="mr-2 h-4 w-4" /> Reissue
@@ -206,14 +230,14 @@ export default function OwnerDriverBadgePage() {
             </>
           ) : (
             <Button variant="gold" onClick={generate} disabled={working}>
-              <Plus className="mr-2 h-4 w-4" /> Generate badge
+              <Plus className="mr-2 h-4 w-4" /> {badge ? "Download badge" : "Generate badge"}
             </Button>
           )}
         </div>
       </div>
 
-      <div id="badge-print" className="mx-auto max-w-md">
-        <Card className="overflow-hidden border-4 border-gold bg-navy-800 text-white shadow-2xl">
+      <div className="mx-auto w-[480px]">
+        <Card id="badge-print" ref={badgeRef} className="overflow-hidden border-4 border-gold bg-navy-800 text-white shadow-2xl">
           <div className="bg-navy p-4 text-center">
             <h2 className="font-display text-2xl font-extrabold text-gold tracking-wider">LORA RENTALS</h2>
             <p className="text-[10px] uppercase tracking-[0.3em] text-silver">Verified Chauffeur</p>

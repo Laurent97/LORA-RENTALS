@@ -30,15 +30,14 @@ export async function POST(req: Request) {
 
   const { data: existing } = await sb
     .from("driver_badges")
-    .select("id, status")
+    .select("*")
     .eq("driver_id", driverId)
     .in("status", ["active", "suspended"])
+    .order("issued_at", { ascending: false })
     .maybeSingle();
   if (existing) {
-    return NextResponse.json(
-      { error: "an active badge already exists for this driver" },
-      { status: 409 }
-    );
+    // Owner can re-download an existing badge without creating a new one.
+    return NextResponse.json({ badge: existing, qrDataUrl: existing.qr_url ?? null });
   }
 
   const badgeNumber = `LORA-${driverId.slice(0, 8).toUpperCase()}-${Date.now().toString(36).slice(-4).toUpperCase()}`;
