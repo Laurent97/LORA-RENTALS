@@ -39,7 +39,7 @@ export default function DriverDashboardPage() {
       const { data } = await sb
         .from("drivers")
         .select("id, is_verified, kyc_status")
-        .eq("id", user.id)
+        .eq("user_id", user.id)
         .maybeSingle();
       setDriver(data as unknown as DriverRow | null);
       setLoading(false);

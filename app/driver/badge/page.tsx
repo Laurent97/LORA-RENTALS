@@ -60,14 +60,14 @@ export default function DriverBadgePage() {
       const { data: d } = await sb
         .from("drivers")
         .select("*")
-        .eq("id", user.id)
+        .eq("user_id", user.id)
         .maybeSingle();
       setDriver(d as unknown as DriverRow | null);
       if (d) {
         const { data: b } = await sb
           .from("driver_badges")
           .select("*")
-          .eq("driver_id", user.id)
+          .eq("driver_id", d.id)
           .eq("status", "active")
           .maybeSingle();
         setBadge(b as unknown as BadgeRow | null);
