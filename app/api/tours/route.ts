@@ -19,12 +19,13 @@ function tourFromRow(row: Record<string, unknown>): Tour {
   };
 }
 
-function driverFromRow(row: Record<string, unknown>, fullName = ""): Driver {
+function driverFromRow(row: Record<string, unknown>, userName = ""): Driver {
+  const fullName = (row.full_name ? String(row.full_name) : userName) || userName;
   return {
     id: String(row.id ?? ""),
-    ownerId: String(row.user_id ?? ""),
+    ownerId: String(row.owner_id ?? row.user_id ?? ""),
     fullName,
-    phone: String(row.phone ?? ""),
+    phone: row.phone ? String(row.phone) : undefined,
     whatsapp: row.whatsapp ? String(row.whatsapp) : undefined,
     email: row.email ? String(row.email) : undefined,
     bio: row.bio ? String(row.bio) : undefined,
@@ -32,8 +33,8 @@ function driverFromRow(row: Record<string, unknown>, fullName = ""): Driver {
     backgroundCheckStatus: row.license_verified ? "approved" : "pending",
     yearsOfExperience: Number(row.years_of_experience ?? 0),
     specialties: (row.specialties as string[]) ?? [],
-    ratingAvg: Number(row.rating ?? 0),
-    ratingCount: Number(row.review_count ?? 0),
+    ratingAvg: Number(row.rating ?? row.rating_avg ?? 0),
+    ratingCount: Number(row.review_count ?? row.rating_count ?? 0),
     isAvailable: Boolean(row.is_available ?? true),
     isVerified: Boolean(row.license_verified ?? false),
     createdAt: String(row.created_at ?? new Date().toISOString()),
