@@ -15,6 +15,7 @@ import { fmtDate } from "@/lib/utils";
 interface DriverRow {
   id: string;
   owner_id: string;
+  user_id?: string;
   full_name: string;
   photo_url: string | null;
   license_number: string | null;
@@ -22,6 +23,7 @@ interface DriverRow {
   phone: string | null;
   email: string | null;
   years_of_experience: number;
+  is_independent: boolean;
 }
 
 interface BadgeRow {
@@ -215,6 +217,8 @@ export default function OwnerDriverBadgePage() {
     return <p className="p-8 text-center text-muted-foreground">Driver not found.</p>;
   }
 
+  const canManage = !driver.is_independent;
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
@@ -223,22 +227,24 @@ export default function OwnerDriverBadgePage() {
           <p className="text-sm text-muted-foreground">{driver.full_name}</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          {badge ? (
-            <>
-              <Button variant="outline" onClick={handlePrint} disabled={working}>
-                <Printer className="mr-2 h-4 w-4" /> Print
+          {canManage && (
+            badge ? (
+              <>
+                <Button variant="outline" onClick={handlePrint} disabled={working}>
+                  <Printer className="mr-2 h-4 w-4" /> Print
+                </Button>
+                <Button variant="outline" onClick={downloadPng} disabled={working}>
+                  <Download className="mr-2 h-4 w-4" /> Download PNG
+                </Button>
+                <Button variant="outline" onClick={reissue} disabled={working}>
+                  <RefreshCw className="mr-2 h-4 w-4" /> Reissue
+                </Button>
+              </>
+            ) : (
+              <Button variant="gold" onClick={generate} disabled={working}>
+                <Plus className="mr-2 h-4 w-4" /> {badge ? "Download badge" : "Generate badge"}
               </Button>
-              <Button variant="outline" onClick={downloadPng} disabled={working}>
-                <Download className="mr-2 h-4 w-4" /> Download PNG
-              </Button>
-              <Button variant="outline" onClick={reissue} disabled={working}>
-                <RefreshCw className="mr-2 h-4 w-4" /> Reissue
-              </Button>
-            </>
-          ) : (
-            <Button variant="gold" onClick={generate} disabled={working}>
-              <Plus className="mr-2 h-4 w-4" /> {badge ? "Download badge" : "Generate badge"}
-            </Button>
+            )
           )}
         </div>
       </div>
@@ -283,7 +289,7 @@ export default function OwnerDriverBadgePage() {
               </div>
             ) : (
               <div className="rounded-lg border border-dashed border-silver p-6 text-center text-sm text-silver">
-                No QR code yet. Generate a badge to preview it here.
+                {canManage ? "No QR code yet. Generate a badge to preview it here." : "No active badge yet. It will be issued by an admin or vehicle owner."}
               </div>
             )}
             <div className="border-t border-gold/30 pt-3 text-center text-[10px] uppercase tracking-wider text-silver">
