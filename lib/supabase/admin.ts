@@ -9,7 +9,12 @@ export function getSupabaseAdmin(): SupabaseClient | null {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) return null;
   if (!client) {
-    client = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
+    try {
+      client = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
+    } catch (err) {
+      console.error("[getSupabaseAdmin] failed to create client:", err);
+      return null;
+    }
   }
   return client;
 }

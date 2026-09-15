@@ -16,7 +16,7 @@ export function StoreHydrator() {
     void hydrate();
     void syncAuthSession();
     const sb = getSupabase();
-    if (!sb) return;
+    if (!sb || !sb.auth) return;
     const { data } = sb.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_OUT") {
         useApp.setState({ user: null, authReady: true });

@@ -200,7 +200,7 @@ export const useApp = create<AppState>()(
 
       syncAuthSession: async () => {
         const sb = getSupabase();
-        if (!sb) {
+        if (!sb || !sb.auth) {
           set({ authReady: true });
           return;
         }
@@ -211,6 +211,9 @@ export const useApp = create<AppState>()(
           } else {
             set({ user: null });
           }
+        } catch (err) {
+          console.error("[syncAuthSession] error:", err);
+          set({ user: null });
         } finally {
           set({ authReady: true });
         }
