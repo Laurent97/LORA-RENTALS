@@ -12,6 +12,7 @@ import { LanguageSwitcher } from "@/components/language-switcher";
 import { PWAInstallButton } from "@/components/pwa/PWAInstallButton";
 import { useApp } from "@/lib/store";
 import { cn, initials } from "@/lib/utils";
+import type { UserRole } from "@/types";
 
 const NAV = [
   { href: "/browse", label: "Browse Cars" },
@@ -23,10 +24,14 @@ const NAV = [
   { href: "/contact", label: "Contact" },
 ];
 
-const DASHBOARD_HREF: Record<string, string> = {
+const DASHBOARD_HREF: Record<UserRole, string> = {
   customer: "/dashboard",
   owner: "/owner",
+  driver: "/driver/dashboard",
   admin: "/admin",
+  corporate_admin: "/corporate",
+  corporate_manager: "/corporate",
+  corporate_member: "/corporate",
 };
 
 export function Header() {
