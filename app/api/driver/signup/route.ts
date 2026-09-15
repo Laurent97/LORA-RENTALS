@@ -50,7 +50,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Email, password, full name, phone, and license number are required" }, { status: 400 });
     }
 
-    const { data: existing } = await sb.from("users").select("id").eq("email", email).single();
+    const { data: existing, error: existingErr } = await sb.from("users").select("id").eq("email", email).maybeSingle();
+    if (existingErr) {
+      return NextResponse.json({ error: `Lookup failed: ${existingErr.message}` }, { status: 500 });
+    }
     if (existing) {
       return NextResponse.json({ error: "An account with this email already exists" }, { status: 409 });
     }
@@ -138,7 +141,8 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ ok: true, userId, message: "Driver application submitted. Pending verification." });
   } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
     console.error("[driver/signup] error:", err);
-    return NextResponse.json({ error: "Signup failed" }, { status: 500 });
+    return NextResponse.json({ error: message || "Signup failed" }, { status: 500 });
   }
 }
