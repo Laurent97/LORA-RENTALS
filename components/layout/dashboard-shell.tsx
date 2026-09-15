@@ -47,7 +47,7 @@ export function DashboardShell({
     if (!authReady) return;
     if (!user) router.replace("/login");
     else if (user.role !== role) {
-      const dest: Record<UserRole, string> = { customer: "/dashboard", owner: "/owner", driver: "/driver", admin: "/admin", corporate_admin: "/corporate", corporate_manager: "/corporate", corporate_member: "/corporate" };
+      const dest: Record<UserRole, string> = { customer: "/dashboard", owner: "/owner", driver: "/driver/dashboard", admin: "/admin", corporate_admin: "/corporate", corporate_manager: "/corporate", corporate_member: "/corporate" };
       router.replace(dest[user.role]);
     }
   }, [authReady, user, role, router]);
