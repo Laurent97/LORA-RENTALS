@@ -33,7 +33,7 @@ export default function ToursPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    void fetch("/api/drivers")
+    void fetch("/api/drivers?verified=false", { cache: "no-store" })
       .then((r) => r.json())
       .then((data) => {
         setDrivers(Array.isArray(data) ? data : []);
