@@ -8,7 +8,7 @@ import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { getSupabase } from "@/lib/supabase/client";
 
 const nav = [
-  { href: "/driver", label: "Dashboard", icon: Banknote },
+  { href: "/driver/dashboard", label: "Dashboard", icon: Banknote },
   { href: "/driver/bookings", label: "Bookings", icon: Clock },
   { href: "/driver/earnings", label: "Earnings", icon: Wallet },
 ];

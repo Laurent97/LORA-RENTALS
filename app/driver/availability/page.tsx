@@ -9,7 +9,7 @@ import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { getSupabase } from "@/lib/supabase/client";
 
 const nav = [
-  { href: "/driver", label: "Dashboard", icon: CalendarDays },
+  { href: "/driver/dashboard", label: "Dashboard", icon: CalendarDays },
   { href: "/driver/bookings", label: "Bookings", icon: CalendarDays },
   { href: "/driver/earnings", label: "Earnings", icon: CalendarDays },
   { href: "/driver/availability", label: "Availability", icon: CalendarDays },

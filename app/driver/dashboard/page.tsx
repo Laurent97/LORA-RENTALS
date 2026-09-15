@@ -6,7 +6,7 @@ import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { useApp } from "@/lib/store";
 
 const nav = [
-  { href: "/driver", label: "Dashboard", icon: Award },
+  { href: "/driver/dashboard", label: "Dashboard", icon: Award },
   { href: "/driver/availability", label: "Availability", icon: CalendarDays },
   { href: "/driver/bookings", label: "Bookings", icon: CalendarDays },
   { href: "/driver/earnings", label: "Earnings", icon: Banknote },

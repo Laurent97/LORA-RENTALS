@@ -10,7 +10,7 @@ import { getSupabase } from "@/lib/supabase/client";
 import { fmtDate } from "@/lib/utils";
 
 const nav = [
-  { href: "/driver", label: "Dashboard", icon: Clock },
+  { href: "/driver/dashboard", label: "Dashboard", icon: Clock },
   { href: "/driver/bookings", label: "Bookings", icon: Clock },
 ];
 

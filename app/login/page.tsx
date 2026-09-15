@@ -28,7 +28,7 @@ const DEMO = [
   { label: "Admin demo", email: "admin@lora.rw" },
 ];
 
-const DEST: Record<string, string> = { customer: "/dashboard", owner: "/owner", driver: "/driver", admin: "/admin" };
+const DEST: Record<string, string> = { customer: "/dashboard", owner: "/owner", driver: "/driver/dashboard", admin: "/admin" };
 
 function LoginForm() {
   const router = useRouter();
