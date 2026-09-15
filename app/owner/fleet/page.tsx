@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Car, ImagePlus, Pencil, Plus, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -34,7 +34,16 @@ export default function FleetPage() {
   const [saving, setSaving] = useState(false);
   const [images, setImages] = useState<string[]>([]);
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
+  const [drivers, setDrivers] = useState<{ id: string; full_name: string }[]>([]);
+  const [rentalMode, setRentalMode] = useState<string>("self_drive");
   const fileRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const sb = getSupabase();
+    if (!sb || !user) return;
+    void sb.from("drivers").select("id, full_name").eq("owner_id", user.id).then(({ data }) => setDrivers((data ?? []) as { id: string; full_name: string }[]));
+  }, [user]);
+
   if (!user) return null;
 
   const fleet = useVehicles().filter((v) => v.ownerId === user.id);
@@ -47,6 +56,11 @@ export default function FleetPage() {
     }
     setSaving(true);
     const fd = new FormData(e.currentTarget);
+    const mode = String(fd.get("rentalMode") ?? "self_drive") as Vehicle["rentalMode"];
+    const priceSelf = Number(fd.get("priceSelfDrive") ?? 0);
+    const priceWith = Number(fd.get("priceWithDriver") ?? 0);
+    const selectedDriver = String(fd.get("driverId") ?? "").trim();
+    const pricePerDay = mode === "with_driver" ? priceWith : priceSelf || priceWith;
     const vehicle: Vehicle = {
       id: crypto.randomUUID(),
       ownerId: user.id,
@@ -58,7 +72,7 @@ export default function FleetPage() {
       transmission: fd.get("transmission") as Transmission,
       fuel: fd.get("fuel") as FuelType,
       seats: Number(fd.get("seats")),
-      pricePerDay: Number(fd.get("pricePerDay")),
+      pricePerDay,
       location: String(fd.get("location") ?? ""),
       images: images.length > 0 ? images : ["https://images.unsplash.com/photo-1494976388531-d1058494cdd8?f_auto&q_auto&w_1200"],
       features: [],
@@ -70,6 +84,10 @@ export default function FleetPage() {
       tripsCompleted: 0,
       paymentMethods: ["cash", "momo", "card"],
       airportApproved: false,
+      rentalMode: mode,
+      driverId: (mode !== "self_drive" && selectedDriver) ? selectedDriver : undefined,
+      priceSelfDriveRwf: mode !== "with_driver" ? priceSelf : undefined,
+      priceWithDriverRwf: mode !== "self_drive" ? priceWith : undefined,
       createdAt: new Date().toISOString(),
     };
     addVehicle(vehicle);
@@ -219,12 +237,49 @@ export default function FleetPage() {
                 <Label className="mb-1.5 block">Fuel</Label>
                 <Select name="fuel" required>{FUEL_TYPES.map((f) => <option key={f.value} value={f.value}>{f.label}</option>)}</Select>
               </div>
-              <div><Label className="mb-1.5 block">Price/day (RWF)</Label><Input name="pricePerDay" required type="number" min={10000} step={1000} placeholder="75000" /></div>
+              <div>
+                <Label className="mb-1.5 block">Rental mode</Label>
+                <Select name="rentalMode" required value={rentalMode} onChange={(e) => setRentalMode(e.target.value)}>
+                  <option value="self_drive">Self-Drive Only</option>
+                  <option value="with_driver">With Driver Only</option>
+                  <option value="both">Both Options</option>
+                </Select>
+              </div>
             </div>
             <div>
               <Label className="mb-1.5 block">Location</Label>
               <Select name="location" required>{RWANDA_LOCATIONS.map((l) => <option key={l} value={l}>{l}</option>)}</Select>
             </div>
+            {(rentalMode === "self_drive" || rentalMode === "both") && (
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <Label className="mb-1.5 block">Self-drive price/day (RWF)</Label>
+                  <Input name="priceSelfDrive" required type="number" min={10000} step={1000} placeholder="75000" />
+                </div>
+                {rentalMode === "both" && (
+                  <div>
+                    <Label className="mb-1.5 block">With-driver price/day (RWF)</Label>
+                    <Input name="priceWithDriver" required type="number" min={10000} step={1000} placeholder="95000" />
+                  </div>
+                )}
+              </div>
+            )}
+            {rentalMode === "with_driver" && (
+              <div>
+                <Label className="mb-1.5 block">With-driver price/day (RWF)</Label>
+                <Input name="priceWithDriver" required type="number" min={10000} step={1000} placeholder="95000" />
+              </div>
+            )}
+            {rentalMode !== "self_drive" && (
+              <div>
+                <Label className="mb-1.5 block">Driver</Label>
+                <Select name="driverId" required={rentalMode !== "self_drive"}>
+                  <option value="">Select a driver…</option>
+                  {drivers.map((d) => <option key={d.id} value={d.id}>{d.full_name}</option>)}
+                </Select>
+                {drivers.length === 0 && <p className="mt-1 text-xs text-amber-600">No drivers yet. Add a driver in the Drivers section first.</p>}
+              </div>
+            )}
             {/* LocationAutocomplete is used for customer-facing search; the fleet form keeps a plain select for speed. */}
             <div>
               <Label className="mb-1.5 block">Description</Label>
