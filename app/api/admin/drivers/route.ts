@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin, getCallerProfile } from "@/lib/supabase/admin";
+import { signBadgeToken } from "@/lib/badges/security";
+import { generateQrDataUrl } from "@/lib/badges/qr";
+import { BRAND } from "@/lib/constants";
 
 export async function GET(req: Request) {
   const sb = getSupabaseAdmin();
@@ -28,6 +31,48 @@ export async function PATCH(req: Request) {
 
   let update: Record<string, any> = {};
   if (action === "approve") {
+    const { data: driver } = await sb.from("drivers").select("id, owner_id").eq("id", id).single();
+    const ownerId = driver?.owner_id ?? "";
+
+    // Auto-generate driver badge on KYC approval if one does not exist
+    const { data: existing } = await sb
+      .from("driver_badges")
+      .select("id")
+      .eq("driver_id", id)
+      .in("status", ["active", "suspended"])
+      .maybeSingle();
+
+    if (!existing && ownerId) {
+      const badgeNumber = `LORA-${id.slice(0, 8).toUpperCase()}-${Date.now().toString(36).slice(-4).toUpperCase()}`;
+      const issuedAt = new Date().toISOString();
+      const expiresAt = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
+
+      const { data: badge, error: iErr } = await sb
+        .from("driver_badges")
+        .insert({
+          driver_id: id,
+          owner_id: ownerId,
+          badge_number: badgeNumber,
+          verification_token: "",
+          qr_url: "",
+          status: "active",
+          issued_at: issuedAt,
+          expires_at: expiresAt,
+          verify_count: 0,
+        })
+        .select()
+        .single();
+
+      if (badge) {
+        const token = signBadgeToken({ badge_number: badgeNumber, driver_id: id, owner_id: ownerId });
+        const verifyUrl = `${BRAND.siteUrl}/verify/driver/${badgeNumber}?t=${encodeURIComponent(token)}`;
+        const qrDataUrl = await generateQrDataUrl(verifyUrl);
+        await sb.from("driver_badges").update({ verification_token: token, qr_url: qrDataUrl }).eq("id", badge.id);
+      } else if (iErr) {
+        console.warn("[admin/drivers] badge insert failed:", iErr.message);
+      }
+    }
+
     update = { is_verified: true, is_available: true, kyc_status: "approved", background_check_status: "approved", approved_at: new Date().toISOString(), approved_by: caller.id, verified_at: new Date().toISOString(), verified_by: caller.id };
   } else if (action === "suspend") {
     update = { is_available: false };
