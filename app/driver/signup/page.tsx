@@ -89,12 +89,18 @@ export default function DriverSignupPage() {
       toast.error("Passwords do not match");
       return;
     }
+    const email = form.email.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
+    const payload = { ...form, email };
     setSubmitting(true);
     try {
       const res = await fetch("/api/driver/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify(payload),
       });
       const json = await res.json().catch(() => ({ error: "Network error" }));
       if (!res.ok) throw new Error(json.error || "Signup failed");

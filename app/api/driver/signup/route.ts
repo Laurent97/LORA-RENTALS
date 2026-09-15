@@ -46,11 +46,13 @@ export async function POST(req: Request) {
       availableUntil,
     } = body;
 
-    if (!email || !password || !fullName || !phone || !licenseNumber) {
-      return NextResponse.json({ error: "Email, password, full name, phone, and license number are required" }, { status: 400 });
+    const cleanEmail = String(email ?? "").trim().toLowerCase();
+    const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRe.test(cleanEmail) || !password || !fullName || !phone || !licenseNumber) {
+      return NextResponse.json({ error: "A valid email, password, full name, phone, and license number are required" }, { status: 400 });
     }
 
-    const { data: existing, error: existingErr } = await sb.from("users").select("id").eq("email", email).maybeSingle();
+    const { data: existing, error: existingErr } = await sb.from("users").select("id").eq("email", cleanEmail).maybeSingle();
     if (existingErr) {
       return NextResponse.json({ error: `Lookup failed: ${existingErr.message}` }, { status: 500 });
     }
@@ -59,7 +61,7 @@ export async function POST(req: Request) {
     }
 
     const { data: auth, error: authError } = await sb.auth.admin.createUser({
-      email,
+      email: cleanEmail,
       password,
       email_confirm: true,
       user_metadata: { name: fullName },
@@ -75,7 +77,7 @@ export async function POST(req: Request) {
       id: userId,
       role: "driver",
       name: fullName,
-      email,
+      email: cleanEmail,
       phone,
       kyc_status: "pending",
       created_at: new Date().toISOString(),
@@ -96,8 +98,8 @@ export async function POST(req: Request) {
       date_of_birth: dateOfBirth ?? null,
       gender: gender ?? null,
       nationality: nationality ?? null,
-      city: city ?? null,
       district: district ?? null,
+      home_city: (homeCity && String(homeCity).trim() ? homeCity : city) ?? null,
       languages: languages ?? [],
       photo_url: photoUrl ?? null,
       license_number: licenseNumber,
@@ -118,7 +120,6 @@ export async function POST(req: Request) {
       daily_rate_rwf: dailyRateRwf ?? null,
       half_day_rate_rwf: halfDayRateRwf ?? null,
       airport_pickup_rate_rwf: airportPickupRateRwf ?? null,
-      home_city: homeCity ?? null,
       serves_cities: servesCities ?? [],
       min_hours: minHours ?? 4,
       service_radius_km: serviceRadiusKm ?? 50,
