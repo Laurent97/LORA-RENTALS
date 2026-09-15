@@ -168,7 +168,7 @@ export async function PATCH(req: Request) {
     const { id, status } = (await req.json().catch(() => ({}))) as { id?: string; status?: string };
     if (!id || !status) return NextResponse.json({ error: "id and status required" }, { status: 400 });
 
-    const { data: existing } = await sb.from("driver_bookings").select("id, driver_id, status").eq("id", id).single();
+    const { data: existing } = await sb.from("driver_bookings").select("id, driver_id, status, driver_net_rwf, driver_booking_id").eq("id", id).single();
     if (!existing) return NextResponse.json({ error: "not found" }, { status: 404 });
 
     // resolve driver from user
@@ -181,7 +181,18 @@ export async function PATCH(req: Request) {
     const patch: Record<string, unknown> = { status, updated_at: now };
     if (status === "accepted") patch.accepted_at = now;
     if (status === "in_progress") patch.started_at = now;
-    if (status === "completed") patch.completed_at = now;
+    if (status === "completed") {
+      patch.completed_at = now;
+      // credit driver net once trip is complete
+      await sb.from("driver_earnings").insert({
+        driver_id: existing.driver_id,
+        driver_booking_id: id,
+        amount_rwf: existing.driver_net_rwf ?? 0,
+        type: "trip",
+        status: "available",
+        created_at: now,
+      });
+    }
     if (status === "cancelled") patch.cancelled_at = now;
     if (status === "confirmed") {
       // when confirmed, reveal contact
