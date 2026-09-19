@@ -81,10 +81,10 @@ export default function AdminMessagesPage() {
 
     setSending(true);
     try {
-      const sb = user ? null : null; // placeholder
+      const token = (await getSupabase()?.auth.getSession())?.data.session?.access_token;
       const res = await fetch("/api/broadcast/send", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token ?? ""}` },
         body: JSON.stringify({
           title,
           body,
