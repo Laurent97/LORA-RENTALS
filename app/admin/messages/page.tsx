@@ -94,9 +94,18 @@ export default function AdminMessagesPage() {
           ctaLabel: ctaLabel.trim() || undefined,
         }),
       });
-      const data = (await res.json().catch(() => ({}))) as { ok?: boolean; recipients?: number; error?: string };
+      const data = (await res.json().catch(() => ({}))) as { ok?: boolean; recipients?: number; error?: string; results?: any };
       if (res.ok && data.ok) {
-        toast.success(`Broadcast sent to ${data.recipients ?? estimated} recipients.`);
+        const r = data.results ?? {};
+        const parts = [
+          r.inApp ? `${r.inApp} in-app` : null,
+          r.emailSent ? `${r.emailSent} emails` : null,
+          r.emailSkipped ? `${r.emailSkipped} skipped (check POSTMARK token/logs)` : null,
+          r.emailFailed ? `${r.emailFailed} email failures` : null,
+          r.push ? `${r.push} push` : null,
+        ].filter(Boolean);
+        const detail = parts.length ? ` (${parts.join(" · ")})` : "";
+        toast.success(`Broadcast sent to ${data.recipients ?? estimated} recipients.${detail}`);
         setTitle("");
         setBody("");
         setCtaUrl("");

@@ -62,7 +62,7 @@ export async function POST(req: Request) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   const recipients = users ?? [];
-  const results = { inApp: 0, email: 0, emailFailed: 0, push: 0, pushFailed: 0 };
+  const results = { inApp: 0, emailSent: 0, emailSkipped: 0, emailFailed: 0, push: 0, pushFailed: 0 };
 
   // Broadcast record (best-effort; works before migration)
   let broadcastId: string | undefined;
@@ -151,18 +151,20 @@ export async function POST(req: Request) {
         userId: u.id,
         tag: `broadcast:${audience}`,
       });
+      const status = res.status === "sent" ? "sent" : res.status === "skipped" ? "skipped" : "failed";
       const rid = recipientMap.get(u.id);
       if (rid) {
         await sb
           .from("broadcast_recipients")
           .update({
-            email_status: res.ok ? "sent" : "failed",
+            email_status: status,
             postmark_message_id: res.messageId ?? null,
-            delivered_at: res.ok ? new Date().toISOString() : null,
+            delivered_at: res.status === "sent" ? new Date().toISOString() : null,
           })
           .eq("id", rid);
       }
-      if (res.ok) results.email++;
+      if (res.status === "sent") results.emailSent++;
+      else if (res.status === "skipped") results.emailSkipped++;
       else results.emailFailed++;
     }
   }
@@ -202,7 +204,7 @@ export async function POST(req: Request) {
         .update({
           status: "sent",
           sent_at: new Date().toISOString(),
-          delivered_count: results.inApp + results.email + results.push,
+          delivered_count: results.inApp + results.emailSent + results.push,
         })
         .eq("id", broadcastId);
     } catch (err) {
