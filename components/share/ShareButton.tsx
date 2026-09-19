@@ -11,7 +11,7 @@ export function ShareButton({ listing }: { listing: ShareListing }) {
   return (
     <>
       <button
-        onClick={() => setOpen(true)}
+        onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpen(true); }}
         aria-label="Share this listing"
         className="flex h-11 w-11 items-center justify-center rounded-full bg-navy-800 text-gold shadow-lg transition hover:scale-105 active:scale-95"
       >

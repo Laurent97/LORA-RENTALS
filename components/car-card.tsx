@@ -6,6 +6,7 @@ import { BadgeCheck, Fuel, Heart, MapPin, Settings2, Users } from "lucide-react"
 import { Badge } from "@/components/ui/badge";
 import { Rating } from "@/components/rating";
 import { PayAtPickupBadge } from "@/components/pay-at-pickup-badge";
+import { ShareButton } from "@/components/share/ShareButton";
 import { useApp } from "@/lib/store";
 import { cn, formatMoney } from "@/lib/utils";
 import type { Vehicle } from "@/types";
@@ -34,13 +35,26 @@ export function CarCard({ vehicle }: { vehicle: Vehicle }) {
             </Badge>
           )}
         </div>
+        <div className="absolute right-3 top-3 z-10">
+          <ShareButton
+            listing={{
+              id: vehicle.id,
+              type: "car",
+              url: `/cars/${vehicle.id}`,
+              title: `${vehicle.make} ${vehicle.model} ${vehicle.year}`,
+              description: `${vehicle.location} · ${vehicle.features.slice(0, 3).join(" · ")} · ${vehicle.seats} seats · ${vehicle.transmission}`,
+              image: vehicle.images[0] ?? "",
+              price: `${formatMoney(vehicle.pricePerDay, currency)}/day`,
+            }}
+          />
+        </div>
         <button
           onClick={(e) => {
             e.preventDefault();
             toggleFavorite(vehicle.id);
           }}
           aria-label={fav ? "Remove from favorites" : "Save to favorites"}
-          className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-card/90 backdrop-blur transition-transform hover:scale-110"
+          className="absolute right-14 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-card/90 backdrop-blur transition-transform hover:scale-110"
         >
           <Heart
             className={cn("h-4 w-4", fav ? "fill-red-500 text-red-500" : "text-muted-foreground")}
