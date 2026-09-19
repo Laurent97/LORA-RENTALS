@@ -94,18 +94,26 @@ export default function AdminMessagesPage() {
           ctaLabel: ctaLabel.trim() || undefined,
         }),
       });
-      const data = (await res.json().catch(() => ({}))) as { ok?: boolean; recipients?: number; error?: string; results?: any };
+      const data = (await res.json().catch(() => ({}))) as { ok?: boolean; recipients?: number; error?: string; results?: any; postmarkConfigured?: boolean; firstEmailError?: string };
       if (res.ok && data.ok) {
         const r = data.results ?? {};
         const parts = [
           r.inApp ? `${r.inApp} in-app` : null,
           r.emailSent ? `${r.emailSent} emails` : null,
-          r.emailSkipped ? `${r.emailSkipped} skipped (check POSTMARK token/logs)` : null,
+          r.emailSkipped ? `${r.emailSkipped} skipped` : null,
           r.emailFailed ? `${r.emailFailed} email failures` : null,
           r.push ? `${r.push} push` : null,
         ].filter(Boolean);
         const detail = parts.length ? ` (${parts.join(" · ")})` : "";
-        toast.success(`Broadcast sent to ${data.recipients ?? estimated} recipients.${detail}`);
+        const main = `Broadcast sent to ${data.recipients ?? estimated} recipients.${detail}`;
+
+        if (r.emailSkipped > 0 && data.postmarkConfigured === false) {
+          toast.error(`${main} — Postmark is not configured. Set POSTMARK_SERVER_TOKEN.`);
+        } else if (data.firstEmailError) {
+          toast.warning(`${main} — Email issue: ${data.firstEmailError}`);
+        } else {
+          toast.success(main);
+        }
         setTitle("");
         setBody("");
         setCtaUrl("");

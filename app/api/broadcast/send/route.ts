@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server";
 import webpush from "web-push";
 import { getSupabaseAdmin, getCallerProfile } from "@/lib/supabase/admin";
+import { getPostmarkToken } from "@/lib/postmark/client";
 import { sendEmail } from "@/lib/postmark/send";
 import { BRAND } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
+
+const postmarkConfigured = Boolean(getPostmarkToken());
 
 const audiences: Record<string, string[] | null> = {
   all: null,
@@ -63,6 +66,7 @@ export async function POST(req: Request) {
 
   const recipients = users ?? [];
   const results = { inApp: 0, emailSent: 0, emailSkipped: 0, emailFailed: 0, push: 0, pushFailed: 0 };
+  let firstEmailError: string | undefined;
 
   // Broadcast record (best-effort; works before migration)
   let broadcastId: string | undefined;
@@ -152,6 +156,7 @@ export async function POST(req: Request) {
         tag: `broadcast:${audience}`,
       });
       const status = res.status === "sent" ? "sent" : res.status === "skipped" ? "skipped" : "failed";
+      if (!firstEmailError && res.reason) firstEmailError = res.reason;
       const rid = recipientMap.get(u.id);
       if (rid) {
         await sb
@@ -218,6 +223,8 @@ export async function POST(req: Request) {
     audience,
     channels,
     recipients: recipients.length,
+    postmarkConfigured,
+    firstEmailError,
     results,
   });
 }
