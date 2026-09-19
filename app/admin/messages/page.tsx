@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Megaphone, Send } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -10,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useAllUsers, useHydrated } from "@/lib/lookup";
 import { useApp } from "@/lib/store";
+import { getSupabase } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
 const audiences = [
@@ -32,6 +34,23 @@ export default function AdminMessagesPage() {
   const [ctaUrl, setCtaUrl] = useState("");
   const [ctaLabel, setCtaLabel] = useState("");
   const [sending, setSending] = useState(false);
+  const [broadcasts, setBroadcasts] = useState<any[]>([]);
+  const [broadcastsLoading, setBroadcastsLoading] = useState(false);
+
+  useEffect(() => {
+    if (!user || user.role !== "admin") return;
+    setBroadcastsLoading(true);
+    const sb = getSupabase();
+    void (async () => {
+      const token = (await sb?.auth.getSession())?.data.session?.access_token;
+      const res = await fetch("/api/broadcast", {
+        headers: { Authorization: `Bearer ${token ?? ""}` },
+      });
+      const json = await res.json().catch(() => ({ broadcasts: [] }));
+      setBroadcasts(json.broadcasts ?? []);
+      setBroadcastsLoading(false);
+    })();
+  }, [user]);
 
   if (!hydrated || !user) {
     return <p className="p-8 text-center text-muted-foreground">Loading…</p>;
@@ -96,6 +115,40 @@ export default function AdminMessagesPage() {
         <Megaphone className="h-7 w-7 text-gold" />
         <h1 className="font-display text-2xl font-extrabold">Broadcast Center</h1>
       </div>
+
+      <Card className="mb-6">
+        <CardContent className="p-5">
+          <h2 className="mb-3 font-display text-lg font-bold">Recent broadcasts</h2>
+          {broadcastsLoading ? (
+            <p className="text-sm text-muted-foreground">Loading history…</p>
+          ) : broadcasts.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No broadcasts yet. Run the 20260919 migration to enable history.</p>
+          ) : (
+            <div className="space-y-2">
+              {broadcasts.slice(0, 10).map((b) => (
+                <Link
+                  key={b.id}
+                  href={`/admin/messages/${b.id}`}
+                  className="flex items-center justify-between rounded-xl border p-3 transition hover:bg-muted"
+                >
+                  <div>
+                    <p className="font-semibold">{b.title}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {b.audience_type} · {b.channels?.join(", ")} · {new Date(b.created_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <span className={cn(
+                    "rounded-full px-2 py-1 text-xs font-semibold",
+                    b.status === "sent" ? "bg-green-100 text-green-800" : "bg-muted text-muted-foreground"
+                  )}>
+                    {b.status}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
         <form onSubmit={submit} className="space-y-6">
