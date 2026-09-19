@@ -12,6 +12,19 @@ import {
 import type { ShareListing } from "@/lib/share/types";
 import { buildShareLinks, copyToClipboard, shareNatively } from "@/lib/share/shareLinks";
 
+function track(listing: ShareListing, platform: string) {
+  void fetch("/api/share/track", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      listingType: listing.type,
+      listingId: listing.id,
+      platform,
+      url: typeof window !== "undefined" ? `${window.location.origin}${listing.url}` : listing.url,
+    }),
+  });
+}
+
 export function ShareSheet({
   listing,
   open,
@@ -24,18 +37,21 @@ export function ShareSheet({
   const links = buildShareLinks(listing);
   const [downloading, setDownloading] = useState(false);
 
-  const openLink = (href: string | undefined) => {
+  const openLink = (href: string | undefined, platform: string) => {
     if (!href) return;
+    track(listing, platform);
     window.open(href, "_blank", "noopener,noreferrer");
   };
 
   const handleCopy = async () => {
+    track(listing, "copy");
     const ok = await copyToClipboard(links.url);
     if (ok) toast.success("Link copied — paste it anywhere.");
     else toast.error("Could not copy link.");
   };
 
   const handleNative = async () => {
+    track(listing, "native");
     try {
       await shareNatively(listing);
     } catch {
@@ -44,6 +60,7 @@ export function ShareSheet({
   };
 
   const handleInstagram = async () => {
+    track(listing, "instagram");
     const ogUrl = `${window.location.origin}/api/og/${listing.type}/${listing.id}`;
     setDownloading(true);
     try {
@@ -112,7 +129,7 @@ export function ShareSheet({
                   onClose();
                   return;
                 }
-                openLink(p.href);
+                openLink(p.href, p.id);
                 onClose();
               }}
               className="flex flex-col items-center gap-2 rounded-2xl p-3 transition hover:bg-muted disabled:opacity-50"

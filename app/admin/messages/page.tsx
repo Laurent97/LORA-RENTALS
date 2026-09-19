@@ -127,6 +127,7 @@ export default function AdminMessagesPage() {
                   {[
                     { id: "in_app", label: "In-app notification" },
                     { id: "email", label: "Postmark email" },
+                    { id: "push", label: "Web push" },
                   ].map((c) => (
                     <label
                       key={c.id}
