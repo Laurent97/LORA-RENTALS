@@ -86,4 +86,18 @@ export const marketing = {
       signature(t),
     ].join(""),
   }),
+
+  "broadcast-admin": defineTemplate({
+    name: "Admin broadcast", category: "marketing", stream: "broadcast",
+    subject: (d) => String(d.title ?? "News from LORA Rentals"),
+    preheader: (d) => String(d.body ?? "").slice(0, 120),
+    sample: { first_name: "Aline", title: "🔴 We're LIVE on TikTok now!", body: "Join us for a free training on earning more with your car.", cta_label: "Join Live", cta_url: "https://tiktok.com/@lorarentals/live" },
+    html: (d, t) => [
+      greeting(t, d.first_name),
+      h1(esc(d.title)),
+      p(esc(d.body)),
+      ...(d.cta_url && d.cta_label ? [button(esc(d.cta_label), String(d.cta_url))] : []),
+      signature(t),
+    ].join(""),
+  }),
 };

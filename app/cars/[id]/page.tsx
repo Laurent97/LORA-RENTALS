@@ -35,6 +35,7 @@ import { AvailabilityCalendar } from "@/components/availability-calendar";
 import { VerifiedBadge } from "@/components/verified-badge";
 import { WhatsAppButton } from "@/components/whatsapp/WhatsAppButton";
 import { TrustGauge } from "@/components/trust/TrustGauge";
+import { ShareButton } from "@/components/share/ShareButton";
 import { useAllUsers, useHydrated, useReviews, useVehicles } from "@/lib/lookup";
 import { useApp } from "@/lib/store";
 import { BRAND } from "@/lib/constants";
@@ -126,13 +127,24 @@ export default function CarDetailPage() {
           <span className="absolute bottom-4 right-4 rounded-full bg-card/90 px-3 py-1 text-xs font-semibold text-foreground backdrop-blur">
             {imgIdx + 1} / {vehicle.images.length}
           </span>
-          <button
-            onClick={(e) => { e.stopPropagation(); toggleFavorite(vehicle.id); }}
-            aria-label="Save to favorites"
-            className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-card/90 backdrop-blur transition-transform hover:scale-110"
-          >
-            <Heart className={cn("h-5 w-5", fav ? "fill-red-500 text-red-500" : "text-muted-foreground")} />
-          </button>
+          <div className="absolute right-4 top-4 flex gap-2">
+            <ShareButton
+              listing={{
+                url: `/cars/${vehicle.id}`,
+                title: `${vehicle.make} ${vehicle.model} ${vehicle.year}`,
+                description: `${vehicle.location} · ${vehicle.features.slice(0, 3).join(" · ")} · ${vehicle.seats} seats · ${vehicle.transmission}`,
+                image: vehicle.images[imgIdx] ?? vehicle.images[0] ?? "",
+                price: `${formatMoney(vehicle.pricePerDay, currency)}/day`,
+              }}
+            />
+            <button
+              onClick={(e) => { e.stopPropagation(); toggleFavorite(vehicle.id); }}
+              aria-label="Save to favorites"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-card/90 backdrop-blur transition-transform hover:scale-110"
+            >
+              <Heart className={cn("h-5 w-5", fav ? "fill-red-500 text-red-500" : "text-muted-foreground")} />
+            </button>
+          </div>
         </button>
         <div className="hidden max-h-[520px] grid-cols-2 gap-3 overflow-y-auto pr-1 lg:grid lg:grid-cols-2">
           {vehicle.images.map((src, i) => (
