@@ -130,6 +130,8 @@ export default function CarDetailPage() {
           <div className="absolute right-4 top-4 flex gap-2">
             <ShareButton
               listing={{
+                id: vehicle.id,
+                type: "car",
                 url: `/cars/${vehicle.id}`,
                 title: `${vehicle.make} ${vehicle.model} ${vehicle.year}`,
                 description: `${vehicle.location} · ${vehicle.features.slice(0, 3).join(" · ")} · ${vehicle.seats} seats · ${vehicle.transmission}`,

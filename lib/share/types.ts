@@ -1,4 +1,6 @@
 export type ShareListing = {
+  id: string;
+  type: "car" | "driver" | "blog" | "tour";
   url: string;
   title: string;
   description: string;

@@ -1,7 +1,8 @@
 "use client";
 
-import { Facebook, Instagram, Link, MessageCircle, Share2, Twitter, X } from "lucide-react";
+import { Facebook, Instagram, Link, Loader2, MessageCircle, Share2, Twitter } from "lucide-react";
 import { toast } from "sonner";
+import { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -21,6 +22,7 @@ export function ShareSheet({
   onClose: () => void;
 }) {
   const links = buildShareLinks(listing);
+  const [downloading, setDownloading] = useState(false);
 
   const openLink = (href: string | undefined) => {
     if (!href) return;
@@ -38,6 +40,37 @@ export function ShareSheet({
       await shareNatively(listing);
     } catch {
       await handleCopy();
+    }
+  };
+
+  const handleInstagram = async () => {
+    const ogUrl = `${window.location.origin}/api/og/${listing.type}/${listing.id}`;
+    setDownloading(true);
+    try {
+      const res = await fetch(ogUrl);
+      if (!res.ok) throw new Error("Image not available");
+      const blob = await res.blob();
+      const file = new File([blob], `lora-${listing.type}.jpg`, { type: blob.type });
+
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: listing.title,
+          text: `${listing.description}\n${links.url}`,
+        });
+      } else {
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = `lora-${listing.type}.jpg`;
+        a.click();
+        URL.revokeObjectURL(a.href);
+        toast.success("Image downloaded — open Instagram to post it.");
+      }
+    } catch {
+      await handleCopy();
+      toast("OG image not ready. Link copied — you can post the URL on Instagram.");
+    } finally {
+      setDownloading(false);
     }
   };
 
@@ -72,19 +105,24 @@ export function ShareSheet({
           {platforms.map((p) => (
             <button
               key={p.id}
+              disabled={p.id === "instagram" && downloading}
               onClick={() => {
                 if (p.id === "instagram") {
-                  handleCopy();
-                  toast("Image link copied. Open Instagram and paste in a post or story.");
+                  void handleInstagram();
+                  onClose();
                   return;
                 }
                 openLink(p.href);
                 onClose();
               }}
-              className="flex flex-col items-center gap-2 rounded-2xl p-3 transition hover:bg-muted"
+              className="flex flex-col items-center gap-2 rounded-2xl p-3 transition hover:bg-muted disabled:opacity-50"
             >
               <div className={`flex h-12 w-12 items-center justify-center rounded-2xl text-white ${p.color}`}>
-                <p.icon className="h-6 w-6" />
+                {downloading && p.id === "instagram" ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <p.icon className="h-6 w-6" />
+                )}
               </div>
               <span className="text-xs font-medium">{p.label}</span>
             </button>
@@ -110,13 +148,6 @@ export function ShareSheet({
             <span className="text-xs font-medium">More</span>
           </button>
         </div>
-
-        <button
-          onClick={onClose}
-          className="absolute right-4 top-4 rounded-full p-1 text-muted-foreground hover:bg-muted"
-        >
-          <X className="h-4 w-4" />
-        </button>
       </DialogContent>
     </Dialog>
   );

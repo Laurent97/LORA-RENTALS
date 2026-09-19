@@ -6,6 +6,7 @@ import { Award, CalendarDays, Languages, MapPin, Phone, Shield, Star, User } fro
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/empty-state";
+import { ShareButton } from "@/components/share/ShareButton";
 import { BRAND } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
@@ -121,16 +122,28 @@ export default function ToursPage() {
                     )}
                   </div>
 
-                  {d.phone && (
-                    <a
-                      href={`tel:${d.phone.replace(/\s/g, "")}`}
-                      className={cn(
-                        "mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-gold px-4 py-2.5 text-sm font-semibold text-navy-900 transition hover:bg-gold-300"
-                      )}
-                    >
-                      <Phone className="h-4 w-4" /> Call {d.fullName.split(" ")[0]}
-                    </a>
-                  )}
+                  <div className="mt-5 flex gap-2">
+                    <ShareButton
+                      listing={{
+                        id: d.id,
+                        type: "driver",
+                        url: `/drivers/${d.id}`,
+                        title: d.fullName,
+                        description: `${d.yearsOfExperience} years experience · ${d.languages.slice(0, 3).join(" · ")}`,
+                        image: d.photoUrl ?? "",
+                      }}
+                    />
+                    {d.phone && (
+                      <a
+                        href={`tel:${d.phone.replace(/\s/g, "")}`}
+                        className={cn(
+                          "flex flex-1 items-center justify-center gap-2 rounded-xl bg-gold px-4 py-2.5 text-sm font-semibold text-navy-900 transition hover:bg-gold-300"
+                        )}
+                      >
+                        <Phone className="h-4 w-4" /> Call {d.fullName.split(" ")[0]}
+                      </a>
+                    )}
+                  </div>
                 </div>
               </CardContent>
             </Card>
