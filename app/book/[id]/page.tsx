@@ -188,7 +188,7 @@ export default function BookingPage() {
         driverIdNumber: idNumber,
         createdAt: new Date().toISOString(),
       };
-      addBooking(booking);
+      await addBooking(booking);
       if (pointsUsed > 0) redeemPoints(user.id, pointsUsed, booking.id);
 
       if (rentalMode === "with_driver" && selectedDriver) {

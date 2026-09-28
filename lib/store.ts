@@ -531,16 +531,20 @@ export const useApp = create<AppState>()(
         }
       },
 
-      addBooking: (b) => {
+      addBooking: async (b) => {
         set((s) => ({ bookings: [b, ...s.bookings] }));
         const sb = getSupabase();
-        if (sb) {
-          sb.from("bookings")
-            .insert(bookingToRow(b))
-            .then(({ error }) => {
-              if (error) console.warn("booking sync failed:", error.message);
-              else void notifyEmail("booking.requested", b.id);
-            });
+        if (!sb) return;
+        const { error } = await sb.from("bookings").insert(bookingToRow(b));
+        if (error) {
+          console.warn("booking sync failed:", error.message);
+          return;
+        }
+        try {
+          const res = await notifyEmail("booking.requested", b.id);
+          if (res && !res.ok) console.warn("booking.requested email not sent:", res.reason);
+        } catch (err) {
+          console.warn("booking.requested email failed:", err);
         }
       },
 
