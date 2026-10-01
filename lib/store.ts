@@ -140,6 +140,8 @@ interface AppState {
   bookings: Booking[];
   hydrate: () => Promise<void>;
   addVehicle: (v: Vehicle) => void;
+  updateVehicle: (v: Vehicle) => void;
+  removeVehicle: (id: string) => void;
   updateVehicleStatus: (id: string, status: VehicleStatus) => void;
   addBooking: (b: Booking) => void;
   updateBookingStatus: (id: string, status: Booking["status"]) => void;
@@ -527,6 +529,32 @@ export const useApp = create<AppState>()(
             .insert(vehicleToRow(v))
             .then(({ error }) => {
               if (error) console.warn("vehicle sync failed:", error.message);
+            });
+        }
+      },
+
+      updateVehicle: (v) => {
+        set((s) => ({ vehicles: s.vehicles.map((x) => (x.id === v.id ? v : x)) }));
+        const sb = getSupabase();
+        if (sb) {
+          sb.from("vehicles")
+            .update(vehicleToRow(v))
+            .eq("id", v.id)
+            .then(({ error }) => {
+              if (error) console.warn("vehicle update failed:", error.message);
+            });
+        }
+      },
+
+      removeVehicle: (id) => {
+        set((s) => ({ vehicles: s.vehicles.filter((x) => x.id !== id) }));
+        const sb = getSupabase();
+        if (sb) {
+          sb.from("vehicles")
+            .delete()
+            .eq("id", id)
+            .then(({ error }) => {
+              if (error) console.warn("vehicle delete failed:", error.message);
             });
         }
       },

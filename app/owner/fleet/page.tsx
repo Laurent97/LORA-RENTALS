@@ -29,8 +29,9 @@ const STATUS_VARIANT: Record<VehicleStatus, "success" | "secondary" | "warning" 
 };
 
 export default function FleetPage() {
-  const { user, currency, addVehicle } = useApp();
+  const { user, currency, addVehicle, updateVehicle, removeVehicle } = useApp();
   const [addOpen, setAddOpen] = useState(false);
+  const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
   const [saving, setSaving] = useState(false);
   const [images, setImages] = useState<string[]>([]);
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
@@ -61,9 +62,21 @@ export default function FleetPage() {
     const priceWith = Number(fd.get("priceWithDriver") ?? 0);
     const selectedDriver = String(fd.get("driverId") ?? "").trim();
     const pricePerDay = mode === "with_driver" ? priceWith : priceSelf || priceWith;
-    const vehicle: Vehicle = {
+    const base = editingVehicle ?? {
       id: crypto.randomUUID(),
       ownerId: user.id,
+      features: [],
+      status: "pending_approval" as VehicleStatus,
+      verified: false,
+      rating: 0,
+      reviewCount: 0,
+      tripsCompleted: 0,
+      paymentMethods: ["cash", "momo", "card"],
+      airportApproved: false,
+      createdAt: new Date().toISOString(),
+    };
+    const vehicle: Vehicle = {
+      ...base,
       make: String(fd.get("make") ?? "").trim(),
       model: String(fd.get("model") ?? "").trim(),
       year: Number(fd.get("year")),
@@ -75,27 +88,24 @@ export default function FleetPage() {
       pricePerDay,
       location: String(fd.get("location") ?? ""),
       images: images.length > 0 ? images : ["https://images.unsplash.com/photo-1494976388531-d1058494cdd8?f_auto&q_auto&w_1200"],
-      features: [],
       description: String(fd.get("description") ?? "").trim(),
-      status: "pending_approval",
-      verified: false,
-      rating: 0,
-      reviewCount: 0,
-      tripsCompleted: 0,
-      paymentMethods: ["cash", "momo", "card"],
-      airportApproved: false,
       rentalMode: mode,
       driverId: (mode !== "self_drive" && selectedDriver) ? selectedDriver : undefined,
       priceSelfDriveRwf: mode !== "with_driver" ? priceSelf : undefined,
       priceWithDriverRwf: mode !== "self_drive" ? priceWith : undefined,
-      createdAt: new Date().toISOString(),
     };
-    addVehicle(vehicle);
+    if (editingVehicle) {
+      updateVehicle(vehicle);
+      toast.success("Vehicle updated.");
+    } else {
+      addVehicle(vehicle);
+      toast.success("Vehicle submitted — an admin will review & approve it.");
+    }
     setImages([]);
     setSaving(false);
     setAddOpen(false);
+    setEditingVehicle(null);
     e.currentTarget.reset();
-    toast.success("Vehicle submitted — an admin will review & approve it.");
   };
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -136,7 +146,7 @@ export default function FleetPage() {
           <h1 className="font-display text-2xl font-extrabold tracking-tight">My Fleet</h1>
           <p className="text-sm text-muted-foreground">{fleet.length} vehicle{fleet.length !== 1 ? "s" : ""} listed</p>
         </div>
-        <Button variant="gold" onClick={() => { if (user.kycStatus !== "verified") toast.error("Complete KYC verification before listing a vehicle."); else setAddOpen(true); }}>
+        <Button variant="gold" onClick={() => { if (user.kycStatus !== "verified") toast.error("Complete KYC verification before listing a vehicle."); else { setEditingVehicle(null); setImages([]); setRentalMode("self_drive"); setAddOpen(true); } }}>
           <Plus className="h-4 w-4" /> Add vehicle
         </Button>
       </div>
@@ -181,7 +191,7 @@ export default function FleetPage() {
                   </p>
                 </div>
                 <div className="mt-4 flex gap-2 border-t border-border pt-3">
-                  <Button variant="outline" size="sm" className="flex-1" onClick={() => toast.info("Edit form — same as Add vehicle")}>
+                  <Button variant="outline" size="sm" className="flex-1" onClick={() => { setEditingVehicle(v); setImages(v.images); setRentalMode(v.rentalMode ?? "self_drive"); setAddOpen(true); }}>
                     <Pencil className="h-3.5 w-3.5" /> Edit
                   </Button>
                   <Link
@@ -194,7 +204,7 @@ export default function FleetPage() {
                     variant="ghost"
                     size="sm"
                     className="text-destructive"
-                    onClick={() => toast.success("Vehicle removed (demo)")}
+                    onClick={() => { if (confirm("Remove this vehicle?")) { removeVehicle(v.id); toast.success("Vehicle removed."); } }}
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </Button>
@@ -205,37 +215,37 @@ export default function FleetPage() {
         </div>
       )}
 
-      {/* Add vehicle dialog */}
-      <Dialog open={addOpen} onOpenChange={(open) => { setAddOpen(open); if (open) setImages([]); }}>
+      {/* Add/Edit vehicle dialog */}
+      <Dialog open={addOpen} onOpenChange={(open) => { setAddOpen(open); if (!open) { setImages([]); setEditingVehicle(null); } }}>
         <DialogContent className="max-w-2xl" onClose={() => setAddOpen(false)}>
           <DialogHeader>
-            <DialogTitle>Add a vehicle</DialogTitle>
+            <DialogTitle>{editingVehicle ? "Edit vehicle" : "Add a vehicle"}</DialogTitle>
             <DialogDescription>
-              Photos will upload to Cloudinary when connected. Admin approval required before going live.
+              {editingVehicle ? "Update your vehicle details and save changes." : "Photos will upload to Cloudinary when connected. Admin approval required before going live."}
             </DialogDescription>
           </DialogHeader>
-          <form onSubmit={submit} className="space-y-4">
+          <form onSubmit={submit} key={editingVehicle?.id ?? "new"} className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-3">
-              <div><Label className="mb-1.5 block">Make</Label><Input name="make" required placeholder="Toyota" /></div>
-              <div><Label className="mb-1.5 block">Model</Label><Input name="model" required placeholder="RAV4" /></div>
-              <div><Label className="mb-1.5 block">Year</Label><Input name="year" required type="number" min={2000} max={2027} placeholder="2022" /></div>
+              <div><Label className="mb-1.5 block">Make</Label><Input name="make" required placeholder="Toyota" defaultValue={editingVehicle?.make} /></div>
+              <div><Label className="mb-1.5 block">Model</Label><Input name="model" required placeholder="RAV4" defaultValue={editingVehicle?.model} /></div>
+              <div><Label className="mb-1.5 block">Year</Label><Input name="year" required type="number" min={2000} max={2027} placeholder="2022" defaultValue={editingVehicle?.year} /></div>
             </div>
             <div className="grid gap-4 sm:grid-cols-3">
-              <div><Label className="mb-1.5 block">Plate</Label><Input name="plate" required placeholder="RAE 000 A" /></div>
+              <div><Label className="mb-1.5 block">Plate</Label><Input name="plate" required placeholder="RAE 000 A" defaultValue={editingVehicle?.plate} /></div>
               <div>
                 <Label className="mb-1.5 block">Type</Label>
-                <Select name="type" required>{CAR_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}</Select>
+                <Select name="type" required defaultValue={editingVehicle?.type}>{CAR_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}</Select>
               </div>
-              <div><Label className="mb-1.5 block">Seats</Label><Input name="seats" required type="number" min={2} max={30} placeholder="5" /></div>
+              <div><Label className="mb-1.5 block">Seats</Label><Input name="seats" required type="number" min={2} max={30} placeholder="5" defaultValue={editingVehicle?.seats} /></div>
             </div>
             <div className="grid gap-4 sm:grid-cols-3">
               <div>
                 <Label className="mb-1.5 block">Transmission</Label>
-                <Select name="transmission" required>{TRANSMISSIONS.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}</Select>
+                <Select name="transmission" required defaultValue={editingVehicle?.transmission}>{TRANSMISSIONS.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}</Select>
               </div>
               <div>
                 <Label className="mb-1.5 block">Fuel</Label>
-                <Select name="fuel" required>{FUEL_TYPES.map((f) => <option key={f.value} value={f.value}>{f.label}</option>)}</Select>
+                <Select name="fuel" required defaultValue={editingVehicle?.fuel}>{FUEL_TYPES.map((f) => <option key={f.value} value={f.value}>{f.label}</option>)}</Select>
               </div>
               <div>
                 <Label className="mb-1.5 block">Rental mode</Label>
@@ -248,18 +258,18 @@ export default function FleetPage() {
             </div>
             <div>
               <Label className="mb-1.5 block">Location</Label>
-              <Select name="location" required>{RWANDA_LOCATIONS.map((l) => <option key={l} value={l}>{l}</option>)}</Select>
+              <Select name="location" required defaultValue={editingVehicle?.location}>{RWANDA_LOCATIONS.map((l) => <option key={l} value={l}>{l}</option>)}</Select>
             </div>
             {(rentalMode === "self_drive" || rentalMode === "both") && (
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <Label className="mb-1.5 block">Self-drive price/day (RWF)</Label>
-                  <Input name="priceSelfDrive" required type="number" min={10000} step={1000} placeholder="75000" />
+                  <Input name="priceSelfDrive" required type="number" min={10000} step={1000} placeholder="75000" defaultValue={editingVehicle?.priceSelfDriveRwf} />
                 </div>
                 {rentalMode === "both" && (
                   <div>
                     <Label className="mb-1.5 block">With-driver price/day (RWF)</Label>
-                    <Input name="priceWithDriver" required type="number" min={10000} step={1000} placeholder="95000" />
+                    <Input name="priceWithDriver" required type="number" min={10000} step={1000} placeholder="95000" defaultValue={editingVehicle?.priceWithDriverRwf} />
                   </div>
                 )}
               </div>
@@ -267,13 +277,13 @@ export default function FleetPage() {
             {rentalMode === "with_driver" && (
               <div>
                 <Label className="mb-1.5 block">With-driver price/day (RWF)</Label>
-                <Input name="priceWithDriver" required type="number" min={10000} step={1000} placeholder="95000" />
+                <Input name="priceWithDriver" required type="number" min={10000} step={1000} placeholder="95000" defaultValue={editingVehicle?.priceWithDriverRwf} />
               </div>
             )}
             {rentalMode !== "self_drive" && (
               <div>
                 <Label className="mb-1.5 block">Driver</Label>
-                <Select name="driverId" required={rentalMode !== "self_drive"}>
+                <Select name="driverId" required={rentalMode !== "self_drive"} defaultValue={editingVehicle?.driverId}>
                   <option value="">Select a driver…</option>
                   {drivers.map((d) => <option key={d.id} value={d.id}>{d.full_name}</option>)}
                 </Select>
@@ -283,7 +293,7 @@ export default function FleetPage() {
             {/* LocationAutocomplete is used for customer-facing search; the fleet form keeps a plain select for speed. */}
             <div>
               <Label className="mb-1.5 block">Description</Label>
-              <Textarea name="description" placeholder="Tell renters what makes this car great…" />
+              <Textarea name="description" placeholder="Tell renters what makes this car great…" defaultValue={editingVehicle?.description} />
             </div>
             <div className="space-y-3 rounded-xl border border-dashed border-border p-4">
               <input
@@ -320,7 +330,7 @@ export default function FleetPage() {
               )}
             </div>
             <Button type="submit" variant="gold" className="w-full" disabled={saving}>
-              {saving ? "Submitting…" : "Submit for approval"}
+              {saving ? "Saving…" : editingVehicle ? "Save changes" : "Submit for approval"}
             </Button>
           </form>
         </DialogContent>
